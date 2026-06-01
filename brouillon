@@ -1,0 +1,18 @@
+import pandas as pd
+import duckdb
+
+# Votre chemin (assurez-vous qu'il est correct comme à l'étape précédente)
+chemin = "/Users/florentaccaries/diabetes_012_health_indicators_BRFSS2015.csv"
+Original_data = pd.read_csv(chemin)
+
+# La requête SQL modifiée avec COUNT(*)
+requete_sql = """
+SELECT COUNT(*) AS nombre_de_patients
+FROM Original_data 
+WHERE BMI > 30 AND Diabetes_012 = 2.0
+"""
+
+# Exécuter la requête
+resultat = duckdb.query(requete_sql).to_df()
+print("--- Résultat sous forme de tableau ---")
+print(resultat)

@@ -1,17 +1,23 @@
 import pandas as pd
 import duckdb
 
+# ==============================
 # 1. Charger le CSV
+# ==============================
+
 chemin = "/Users/florentaccaries/diabetes_binary_health_indicators_BRFSS2015.csv"
+
 Original_data = pd.read_csv(chemin)
 
-# 2. Connexion DuckDB
 con = duckdb.connect()
 
-# 3. Enregistrer le dataframe pandas comme table SQL temporaire
 con.register("Original_data", Original_data)
 
-# 4. Créer une table brute
+
+# ==============================
+# 2. Créer la table brute
+# ==============================
+
 con.execute("""
 DROP TABLE IF EXISTS diabetes_raw;
 
@@ -20,7 +26,11 @@ SELECT *
 FROM Original_data;
 """)
 
-# 5. Créer la table EDA
+
+# ==============================
+# 3. Créer la table EDA
+# ==============================
+
 con.execute("""
 DROP TABLE IF EXISTS diabetes_eda;
 
@@ -132,3 +142,121 @@ SELECT
 
 FROM diabetes_raw;
 """)
+
+
+# ==============================
+# 4. Voir la table EDA
+# ==============================
+
+eda_data = con.execute("""
+SELECT *
+FROM diabetes_eda
+""").df()
+
+eda_data.head()
+
+
+# ==============================
+# 5. Check nombre de lignes
+# ==============================
+
+con.execute("""
+SELECT COUNT(*) AS nombre_lignes
+FROM diabetes_eda
+""").df()
+
+
+# ==============================
+# 6. Check valeurs manquantes
+# ==============================
+
+eda_data.isnull().sum()
+
+
+
+# ==============================
+# 7. Check doublons
+# ==============================
+
+eda_data.duplicated().sum()
+
+
+# ==============================
+# 8. Check répartition de la target
+# ==============================
+
+con.execute("""
+SELECT 
+    Diabetes_status,
+    COUNT(*) AS nombre_patients
+FROM diabetes_eda
+GROUP BY Diabetes_status
+ORDER BY nombre_patients DESC
+""").df()
+
+
+# ==============================
+# 9. Check valeurs des colonnes binaires
+# ==============================
+
+binary_cols = [
+    "Diabetes_binary", "HighBP", "HighChol", "CholCheck",
+    "Smoker", "Stroke", "HeartDiseaseorAttack", "PhysActivity",
+    "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare",
+    "NoDocbcCost", "DiffWalk", "Sex"
+]
+
+for col in binary_cols:
+    print("\n---", col, "---")
+    display(con.execute(f"""
+        SELECT 
+            {col},
+            COUNT(*) AS nombre
+        FROM diabetes_eda
+        GROUP BY {col}
+        ORDER BY {col}
+    """).df())
+
+
+
+# ==============================
+# 10. Check valeurs des colonnes ordinales
+# ==============================
+
+ordinal_cols = ["GenHlth", "Age", "Education", "Income"]
+
+for col in ordinal_cols:
+    print("\n---", col, "---")
+    display(con.execute(f"""
+        SELECT 
+            {col},
+            COUNT(*) AS nombre
+        FROM diabetes_eda
+        GROUP BY {col}
+        ORDER BY {col}
+    """).df())
+
+
+
+# ==============================
+# 11. Check variables numériques
+# ==============================
+
+con.execute("""
+SELECT
+    MIN(BMI) AS min_bmi,
+    MAX(BMI) AS max_bmi,
+    AVG(BMI) AS avg_bmi,
+
+    MIN(MentHlth) AS min_menthlth,
+    MAX(MentHlth) AS max_menthlth,
+    AVG(MentHlth) AS avg_menthlth,
+
+    MIN(PhysHlth) AS min_physhlth,
+    MAX(PhysHlth) AS max_physhlth,
+    AVG(PhysHlth) AS avg_physhlth
+FROM diabetes_eda
+""").df()
+
+
+

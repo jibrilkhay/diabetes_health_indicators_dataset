@@ -28,7 +28,7 @@ Une analyse approfondie du dataset révèle des biais méthodologiques fondament
 * **Mélange des types de diabète :** Les diabètes de type 1 (auto-immun) et de type 2 (lié au mode de vie) sont regroupés dans la même variable cible, ce qui dilue les corrélations.
 * **Les "Faux Sains" :** De nombreuses personnes classées comme "saines" (0) peuvent être en phase de prédiabète non diagnostiqué, ce qui ajoute du bruit au modèle.
 
-💡 **Recommandation de modélisation :** N'utilisez pas ce modèle pour faire de la *prédiction de risque futur*. Utilisez-le plutôt comme un **outil de dépistage immédiat** (ex: "Au vu de ces indicateurs, cette personne a-t-elle probablement un diabète non diagnostiqué en ce moment ?").
+💡 **Recommandation de modélisation :** Notre but ici est donc d'utiliser ce dataset pour comprendre si à un instant t donné , une personne ayant certains marqueurs associés au diabète a donc dde grandes chances de le développer ou de l'avoir développé ? (Prédiction à un instant donné) .
 
 ---
 

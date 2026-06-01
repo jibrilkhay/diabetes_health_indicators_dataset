@@ -1,0 +1,110 @@
+DROP TABLE IF EXISTS diabetes_eda;
+
+CREATE TABLE diabetes_eda AS
+SELECT
+    -- target numérique
+    CAST(Diabetes_binary AS INTEGER) AS Diabetes_binary,
+
+    -- target lisible pour les graphiques
+    CASE
+        WHEN Diabetes_binary = 0 THEN 'No Diabetes'
+        WHEN Diabetes_binary = 1 THEN 'Diabetes'
+        ELSE 'Unknown'
+    END AS Diabetes_status,
+
+    CAST(HighBP AS INTEGER) AS HighBP,
+    CASE
+        WHEN HighBP = 0 THEN 'No High BP'
+        WHEN HighBP = 1 THEN 'High BP'
+        ELSE 'Unknown'
+    END AS HighBP_label,
+
+    CAST(HighChol AS INTEGER) AS HighChol,
+    CASE
+        WHEN HighChol = 0 THEN 'No High Cholesterol'
+        WHEN HighChol = 1 THEN 'High Cholesterol'
+        ELSE 'Unknown'
+    END AS HighChol_label,
+
+    CAST(CholCheck AS INTEGER) AS CholCheck,
+
+    CAST(BMI AS INTEGER) AS BMI,
+
+    CASE
+        WHEN BMI < 18.5 THEN 'Underweight'
+        WHEN BMI >= 18.5 AND BMI < 25 THEN 'Normal'
+        WHEN BMI >= 25 AND BMI < 30 THEN 'Overweight'
+        WHEN BMI >= 30 THEN 'Obese'
+        ELSE 'Unknown'
+    END AS BMI_category,
+
+    CAST(Smoker AS INTEGER) AS Smoker,
+    CASE
+        WHEN Smoker = 0 THEN 'Non-smoker'
+        WHEN Smoker = 1 THEN 'Smoker'
+        ELSE 'Unknown'
+    END AS Smoker_label,
+
+    CAST(Stroke AS INTEGER) AS Stroke,
+    CAST(HeartDiseaseorAttack AS INTEGER) AS HeartDiseaseorAttack,
+    CAST(PhysActivity AS INTEGER) AS PhysActivity,
+    CAST(Fruits AS INTEGER) AS Fruits,
+    CAST(Veggies AS INTEGER) AS Veggies,
+    CAST(HvyAlcoholConsump AS INTEGER) AS HvyAlcoholConsump,
+    CAST(AnyHealthcare AS INTEGER) AS AnyHealthcare,
+    CAST(NoDocbcCost AS INTEGER) AS NoDocbcCost,
+
+    CAST(GenHlth AS INTEGER) AS GenHlth,
+    CASE
+        WHEN GenHlth = 1 THEN 'Excellent'
+        WHEN GenHlth = 2 THEN 'Very good'
+        WHEN GenHlth = 3 THEN 'Good'
+        WHEN GenHlth = 4 THEN 'Fair'
+        WHEN GenHlth = 5 THEN 'Poor'
+        ELSE 'Unknown'
+    END AS GenHlth_label,
+
+    CAST(MentHlth AS INTEGER) AS MentHlth,
+    CAST(PhysHlth AS INTEGER) AS PhysHlth,
+    CAST(DiffWalk AS INTEGER) AS DiffWalk,
+
+    CAST(Sex AS INTEGER) AS Sex,
+    CASE
+        WHEN Sex = 0 THEN 'Female'
+        WHEN Sex = 1 THEN 'Male'
+        ELSE 'Unknown'
+    END AS Sex_label,
+
+    CAST(Age AS INTEGER) AS Age,
+    CASE
+        WHEN Age = 1 THEN '18-24'
+        WHEN Age = 2 THEN '25-29'
+        WHEN Age = 3 THEN '30-34'
+        WHEN Age = 4 THEN '35-39'
+        WHEN Age = 5 THEN '40-44'
+        WHEN Age = 6 THEN '45-49'
+        WHEN Age = 7 THEN '50-54'
+        WHEN Age = 8 THEN '55-59'
+        WHEN Age = 9 THEN '60-64'
+        WHEN Age = 10 THEN '65-69'
+        WHEN Age = 11 THEN '70-74'
+        WHEN Age = 12 THEN '75-79'
+        WHEN Age = 13 THEN '80+'
+        ELSE 'Unknown'
+    END AS Age_label,
+
+    CAST(Education AS INTEGER) AS Education,
+    CAST(Income AS INTEGER) AS Income,
+    CASE
+        WHEN Income = 1 THEN '< $10k'
+        WHEN Income = 2 THEN '$10k-$15k'
+        WHEN Income = 3 THEN '$15k-$20k'
+        WHEN Income = 4 THEN '$20k-$25k'
+        WHEN Income = 5 THEN '$25k-$35k'
+        WHEN Income = 6 THEN '$35k-$50k'
+        WHEN Income = 7 THEN '$50k-$75k'
+        WHEN Income = 8 THEN '$75k+'
+        ELSE 'Unknown'
+    END AS Income_label
+
+FROM diabetes_raw;

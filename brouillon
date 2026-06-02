@@ -1,3 +1,680 @@
-je veux faire de la régression logistique sur ces données, j'ai je crois 250000 patients do nt 85% de non diabétiques, déjà supprime les doublons et en utilisant les requêtes sql crée une table pour ma régression linéaire avec autant de diabétique que de non diabétique, pour avoir un modèle équilibré puis j'essaierai sur tout mon jeu après de données puis en créant des faux diabétiques pour avoir un gros jeu de données , qu'en penses tu ? voici mon cours dessus 
+import pandas as pd
+import duckdb
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+# ==============================
+# 1. Charger le CSV
+# ==============================
+chemin = "/Users/khjib/downloads/archive/diabetes_binary_health_indicators_BRFSS2015.csv"
+Original_data = pd.read_csv(chemin)
+
+con = duckdb.connect()
+con.register("Original_data", Original_data)
+
+
+# ==============================
+# 2. Créer la table brute
+# ==============================
+con.execute("""
+DROP TABLE IF EXISTS diabetes_raw;
+
+CREATE TABLE diabetes_raw AS
+SELECT *
+FROM Original_data;
+""")
+
+
+# ==============================
+# 3. Créer la table EDA
+# ==============================
+con.execute("""
+DROP TABLE IF EXISTS diabetes_eda;
+
+CREATE TABLE diabetes_eda AS
+SELECT
+    CAST(Diabetes_binary AS INTEGER) AS Diabetes_binary,
+
+    CASE
+        WHEN Diabetes_binary = 0 THEN 'No Diabetes'
+        WHEN Diabetes_binary = 1 THEN 'Diabetes'
+        ELSE 'Unknown'
+    END AS Diabetes_status,
+
+    CAST(HighBP AS INTEGER) AS HighBP,
+    CASE
+        WHEN HighBP = 0 THEN 'No High BP'
+        WHEN HighBP = 1 THEN 'High BP'
+        ELSE 'Unknown'
+    END AS HighBP_label,
+
+    CAST(HighChol AS INTEGER) AS HighChol,
+    CASE
+        WHEN HighChol = 0 THEN 'No High Cholesterol'
+        WHEN HighChol = 1 THEN 'High Cholesterol'
+        ELSE 'Unknown'
+    END AS HighChol_label,
+
+    CAST(CholCheck AS INTEGER) AS CholCheck,
+
+    CAST(BMI AS INTEGER) AS BMI,
+
+    CASE
+        WHEN BMI < 18.5 THEN 'Underweight'
+        WHEN BMI >= 18.5 AND BMI < 25 THEN 'Normal'
+        WHEN BMI >= 25 AND BMI < 30 THEN 'Overweight'
+        WHEN BMI >= 30 THEN 'Obese'
+        ELSE 'Unknown'
+    END AS BMI_category,
+
+    CAST(Smoker AS INTEGER) AS Smoker,
+    CASE
+        WHEN Smoker = 0 THEN 'Non-smoker'
+        WHEN Smoker = 1 THEN 'Smoker'
+        ELSE 'Unknown'
+    END AS Smoker_label,
+
+    CAST(Stroke AS INTEGER) AS Stroke,
+    CAST(HeartDiseaseorAttack AS INTEGER) AS HeartDiseaseorAttack,
+    CAST(PhysActivity AS INTEGER) AS PhysActivity,
+    CAST(Fruits AS INTEGER) AS Fruits,
+    CAST(Veggies AS INTEGER) AS Veggies,
+    CAST(HvyAlcoholConsump AS INTEGER) AS HvyAlcoholConsump,
+    CAST(AnyHealthcare AS INTEGER) AS AnyHealthcare,
+    CAST(NoDocbcCost AS INTEGER) AS NoDocbcCost,
+
+    CAST(GenHlth AS INTEGER) AS GenHlth,
+    CASE
+        WHEN GenHlth = 1 THEN 'Excellent'
+        WHEN GenHlth = 2 THEN 'Very good'
+        WHEN GenHlth = 3 THEN 'Good'
+        WHEN GenHlth = 4 THEN 'Fair'
+        WHEN GenHlth = 5 THEN 'Poor'
+        ELSE 'Unknown'
+    END AS GenHlth_label,
+
+    CAST(MentHlth AS INTEGER) AS MentHlth,
+    CAST(PhysHlth AS INTEGER) AS PhysHlth,
+    CAST(DiffWalk AS INTEGER) AS DiffWalk,
+
+    CAST(Sex AS INTEGER) AS Sex,
+    CASE
+        WHEN Sex = 0 THEN 'Female'
+        WHEN Sex = 1 THEN 'Male'
+        ELSE 'Unknown'
+    END AS Sex_label,
+
+    CAST(Age AS INTEGER) AS Age,
+    CASE
+        WHEN Age = 1 THEN '18-24'
+        WHEN Age = 2 THEN '25-29'
+        WHEN Age = 3 THEN '30-34'
+        WHEN Age = 4 THEN '35-39'
+        WHEN Age = 5 THEN '40-44'
+        WHEN Age = 6 THEN '45-49'
+        WHEN Age = 7 THEN '50-54'
+        WHEN Age = 8 THEN '55-59'
+        WHEN Age = 9 THEN '60-64'
+        WHEN Age = 10 THEN '65-69'
+        WHEN Age = 11 THEN '70-74'
+        WHEN Age = 12 THEN '75-79'
+        WHEN Age = 13 THEN '80+'
+        ELSE 'Unknown'
+    END AS Age_label,
+
+    CAST(Education AS INTEGER) AS Education,
+
+    CAST(Income AS INTEGER) AS Income,
+    CASE
+        WHEN Income = 1 THEN '< $10k'
+        WHEN Income = 2 THEN '$10k-$15k'
+        WHEN Income = 3 THEN '$15k-$20k'
+        WHEN Income = 4 THEN '$20k-$25k'
+        WHEN Income = 5 THEN '$25k-$35k'
+        WHEN Income = 6 THEN '$35k-$50k'
+        WHEN Income = 7 THEN '$50k-$75k'
+        WHEN Income = 8 THEN '$75k+'
+        ELSE 'Unknown'
+    END AS Income_label
+
+FROM diabetes_raw;
+""")
+
+
+# ==============================
+# 4. Voir la table EDA
+# ==============================
+eda_data = con.execute("""
+SELECT *
+FROM diabetes_eda
+""").df()
+
+print("--- 4. Aperçu de la table ---")
+print(eda_data.head())
+
+
+# ==============================
+# 5. Check nombre de lignes
+# ==============================
+print("\n--- 5. Nombre de lignes ---")
+print(con.execute("""
+SELECT COUNT(*) AS nombre_lignes
+FROM diabetes_eda
+""").df())
+
+
+# ==============================
+# 6. Check valeurs manquantes
+# ==============================
+print("\n--- 6. Valeurs manquantes ---")
+print(eda_data.isnull().sum())
+
+
+# ==============================
+# 7. Check doublons
+# ==============================
+print("\n--- 7. Doublons ---")
+print(eda_data.duplicated().sum())
+
+
+# ==============================
+# 8. Check répartition de la target
+# ==============================
+print("\n--- 8. Répartition cible ---")
+print(con.execute("""
+SELECT 
+    Diabetes_status,
+    COUNT(*) AS nombre_patients
+FROM diabetes_eda
+GROUP BY Diabetes_status
+ORDER BY nombre_patients DESC
+""").df())
+
+
+# ==============================
+# 9. Check valeurs des colonnes binaires
+# ==============================
+binary_cols = [
+    "Diabetes_binary", "HighBP", "HighChol", "CholCheck",
+    "Smoker", "Stroke", "HeartDiseaseorAttack", "PhysActivity",
+    "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare",
+    "NoDocbcCost", "DiffWalk", "Sex"
+]
+
+print("\n--- 9. Colonnes Binaires ---")
+for col in binary_cols:
+    print("\n---", col, "---")
+    print(con.execute(f"""
+        SELECT 
+            {col},
+            COUNT(*) AS nombre
+        FROM diabetes_eda
+        GROUP BY {col}
+        ORDER BY {col}
+    """).df())
+
+
+# ==============================
+# 10. Check valeurs des colonnes ordinales
+# ==============================
+ordinal_cols = ["GenHlth", "Age", "Education", "Income"]
+
+print("\n--- 10. Colonnes Ordinales ---")
+for col in ordinal_cols:
+    print("\n---", col, "---")
+    print(con.execute(f"""
+        SELECT 
+            {col},
+            COUNT(*) AS nombre
+        FROM diabetes_eda
+        GROUP BY {col}
+        ORDER BY {col}
+    """).df())
+
+
+# ==============================
+# 11. Check variables numériques
+# ==============================
+print("\n--- 11. Variables numériques ---")
+print(con.execute("""
+SELECT
+    MIN(BMI) AS min_bmi,
+    MAX(BMI) AS max_bmi,
+    AVG(BMI) AS avg_bmi,
+
+    MIN(MentHlth) AS min_menthlth,
+    MAX(MentHlth) AS max_menthlth,
+    AVG(MentHlth) AS avg_menthlth,
+
+    MIN(PhysHlth) AS min_physhlth,
+    MAX(PhysHlth) AS max_physhlth,
+    AVG(PhysHlth) AS avg_physhlth
+FROM diabetes_eda
+""").df())
+
+
+
+
+
+genhlth_rate = con.execute("""
+SELECT 
+    GenHlth,
+    GenHlth_label,
+    AVG(Diabetes_binary) * 100 AS diabetes_rate
+FROM diabetes_eda
+GROUP BY GenHlth, GenHlth_label
+ORDER BY GenHlth
+""").df()
+
+# ==============================
+# PLOTS EDA - DIABETES PROJECT
+# ==============================
+
+# ============================================================
+# FEATURE ENGINEERING VISUEL - VERSION SIMPLE ET COHÉRENTE
+# On combine uniquement les variables ayant la même logique / tendance
+# ============================================================
+
+import pandas as pd
+
+
+# Récupérer la table EDA
+eda_data = con.execute("""
+SELECT *
+FROM diabetes_eda
+""").df()
+
+
+# ============================================================
+# 1. Création des features combinées cohérentes
+# ============================================================
+
+con.execute("""
+DROP TABLE IF EXISTS diabetes_combined_features;
+
+CREATE TABLE diabetes_combined_features AS
+SELECT
+    *,
+
+    -- ========================================================
+    -- Mode de vie sain : variables protectrices
+    -- PhysActivity, Fruits, Veggies vont dans la même logique
+    -- ========================================================
+    (PhysActivity + Fruits + Veggies) AS Healthy_Lifestyle,
+
+    -- ========================================================
+    -- BMI transformé en score de risque
+    -- 0 = BMI normal / faible
+    -- 1 = surpoids
+    -- 2 = obésité
+    -- ========================================================
+    CASE
+        WHEN BMI < 25 THEN 0
+        WHEN BMI >= 25 AND BMI < 30 THEN 1
+        WHEN BMI >= 30 THEN 2
+        ELSE NULL
+    END AS BMI_Risk,
+
+    -- ========================================================
+    -- Risque métabolique : BMI + hypertension + cholestérol
+    -- ========================================================
+    (
+        CASE
+            WHEN BMI < 25 THEN 0
+            WHEN BMI >= 25 AND BMI < 30 THEN 1
+            WHEN BMI >= 30 THEN 2
+            ELSE 0
+        END
+        + HighBP
+        + HighChol
+    ) AS Metabolic_Risk,
+
+    -- ========================================================
+    -- Risque cardiovasculaire global
+    -- ========================================================
+    (HighBP + HighChol + HeartDiseaseorAttack + Stroke) AS Cardio_Risk,
+
+    -- ========================================================
+    -- Niveau socio-économique
+    -- Education et Income suivent la même logique sociale
+    -- ========================================================
+    (Education + Income) AS Socio_Economic_Level,
+
+    -- ========================================================
+    -- Santé globale
+    -- Ces variables décrivent l'état de santé général
+    -- ========================================================
+    (
+        GenHlth
+        + 2 * DiffWalk
+        + PhysHlth / 30.0
+        + MentHlth / 30.0
+    ) AS Health_Risk,
+
+    -- ========================================================
+    -- Interaction âge + BMI
+    -- ========================================================
+    (Age * BMI) AS Age_BMI_Interaction
+
+FROM diabetes_eda;
+""")
+
+combined_data = con.execute("""
+SELECT *
+FROM diabetes_combined_features
+""").df()
+
+print("Aperçu des features combinées :")
+print(combined_data.head().to_string())
+
+
+# ============================================================
+# TABLE POUR RÉGRESSION LOGISTIQUE
+# Suppression doublons + features combinées + dataset équilibré
+# ============================================================
+
+import pandas as pd
+import duckdb
+
+# ============================================================
+# 1. Table clean sans doublons
+# ============================================================
+
+con.execute("""
+DROP TABLE IF EXISTS diabetes_clean;
+
+CREATE TABLE diabetes_clean AS
+SELECT DISTINCT *
+FROM diabetes_eda;
+""")
+
+print("Nombre de lignes après suppression des doublons :")
+print(con.execute("""
+SELECT COUNT(*) AS nb_lignes
+FROM diabetes_clean
+""").df())
+
+print("Répartition de la target après suppression des doublons :")
+print(con.execute("""
+SELECT 
+    Diabetes_binary,
+    COUNT(*) AS nb_patients,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) AS pourcentage
+FROM diabetes_clean
+GROUP BY Diabetes_binary
+ORDER BY Diabetes_binary;
+""").df())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ============================================================
+# 2. Création des features combinées
+# ============================================================
+
+con.execute("""
+DROP TABLE IF EXISTS diabetes_features_logistic;
+
+CREATE TABLE diabetes_features_logistic AS
+SELECT
+    Diabetes_binary,
+
+    -- Variables originales gardées seules
+    Smoker,
+    HvyAlcoholConsump,
+    Sex,
+    NoDocbcCost,
+    AnyHealthcare,
+    CholCheck,
+
+    -- Mode de vie sain : même tendance protectrice
+    (PhysActivity + Fruits + Veggies) AS Healthy_Lifestyle,
+
+    -- BMI transformé en score de risque
+    CASE
+        WHEN BMI < 25 THEN 0
+        WHEN BMI >= 25 AND BMI < 30 THEN 1
+        WHEN BMI >= 30 THEN 2
+        ELSE NULL
+    END AS BMI_Risk,
+
+    -- Risque métabolique : poids + hypertension + cholestérol
+    (
+        CASE
+            WHEN BMI < 25 THEN 0
+            WHEN BMI >= 25 AND BMI < 30 THEN 1
+            WHEN BMI >= 30 THEN 2
+            ELSE 0
+        END
+        + HighBP
+        + HighChol
+    ) AS Metabolic_Risk,
+
+    -- Risque cardiovasculaire global
+    (HighBP + HighChol + HeartDiseaseorAttack + Stroke) AS Cardio_Risk,
+
+    -- Niveau socio-économique
+    (Education + Income) AS Socio_Economic_Level,
+
+    -- Santé globale
+    (
+        GenHlth
+        + 2 * DiffWalk
+        + PhysHlth / 30.0
+        + MentHlth / 30.0
+    ) AS Health_Risk,
+
+    -- Interaction âge + BMI
+    (Age * BMI) AS Age_BMI_Interaction
+
+FROM diabetes_clean
+WHERE Diabetes_binary IN (0, 1);
+""")
+
+print("Table complète pour régression logistique :")
+print(con.execute("""
+SELECT *
+FROM diabetes_features_logistic
+LIMIT 5;
+""").df())
+
+print("Répartition complète :")
+print(con.execute("""
+SELECT 
+    Diabetes_binary,
+    COUNT(*) AS nb_patients
+FROM diabetes_features_logistic
+GROUP BY Diabetes_binary
+ORDER BY Diabetes_binary;
+""").df())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ============================================================
+# 3. Table équilibrée : autant de diabétiques que de non diabétiques
+# ============================================================
+
+nb_diabetiques = con.execute("""
+SELECT COUNT(*)
+FROM diabetes_features_logistic
+WHERE Diabetes_binary = 1;
+""").fetchone()[0]
+
+print("Nombre de diabétiques :", nb_diabetiques)
+
+con.execute(f"""
+DROP TABLE IF EXISTS diabetes_logistic_balanced;
+
+CREATE TABLE diabetes_logistic_balanced AS
+
+-- Tous les diabétiques
+SELECT *
+FROM diabetes_features_logistic
+WHERE Diabetes_binary = 1
+
+UNION ALL
+
+-- Même nombre de non diabétiques tirés au hasard
+SELECT *
+FROM (
+    SELECT *
+    FROM diabetes_features_logistic
+    WHERE Diabetes_binary = 0
+    ORDER BY RANDOM()
+    LIMIT {nb_diabetiques}
+);
+""")
+
+print("Répartition de la table équilibrée :")
+print(con.execute("""
+SELECT 
+    Diabetes_binary,
+    COUNT(*) AS nb_patients,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) AS pourcentage
+FROM diabetes_logistic_balanced
+GROUP BY Diabetes_binary
+ORDER BY Diabetes_binary;
+""").df())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Dataset équilibré pour premier entraînement
+balanced_data = con.execute("""
+SELECT *
+FROM diabetes_logistic_balanced
+""").df()
+
+# Dataset complet pour test réaliste / comparaison
+full_data = con.execute("""
+SELECT *
+FROM diabetes_features_logistic
+""").df()
+
+print("Balanced shape :", balanced_data.shape)
+print("Full shape :", full_data.shape)
+
+
+
+
+
+
+
+
+
+
+
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
+
+# ============================================================
+# 5. Train / test sur dataset équilibré
+# ============================================================
+
+X = balanced_data.drop("Diabetes_binary", axis=1)
+y = balanced_data["Diabetes_binary"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.30,
+    random_state=42,
+    stratify=y
+)
+
+model = Pipeline([
+    ("scaler", StandardScaler()),
+    ("logreg", LogisticRegression(max_iter=1000))
+])
+
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+y_proba = model.predict_proba(X_test)[:, 1]
+
+print("Résultats sur dataset équilibré :")
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+print("ROC AUC :", roc_auc_score(y_test, y_proba))
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ============================================================
+# 6. Évaluation sur le dataset complet non équilibré
+# ============================================================
+
+X_full = full_data.drop("Diabetes_binary", axis=1)
+y_full = full_data["Diabetes_binary"]
+
+y_full_pred = model.predict(X_full)
+y_full_proba = model.predict_proba(X_full)[:, 1]
+
+print("Résultats sur dataset complet non équilibré :")
+print(confusion_matrix(y_full, y_full_pred))
+print(classification_report(y_full, y_full_pred))
+print("ROC AUC :", roc_auc_score(y_full, y_full_proba))
+
 
 

@@ -1,0 +1,75 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Récupérer la table EDA
+eda_data = con.execute("""
+SELECT *
+FROM diabetes_eda
+""").df()
+
+# Créer la combinaison Fruits + Veggies
+eda_data["Healthy_Diet"] = eda_data["Fruits"] + eda_data["Veggies"]
+
+
+healthy_rate = con.execute("""
+SELECT
+    (Fruits + Veggies) AS Healthy_Diet,
+    AVG(Diabetes_binary) AS diabetes_rate
+FROM diabetes_eda
+GROUP BY Healthy_Diet
+ORDER BY Healthy_Diet
+""").df()
+
+plt.figure(figsize=(7,5))
+sns.lineplot(data=healthy_rate, x="Healthy_Diet", y="diabetes_rate", marker="o")
+plt.title("Taux de diabète selon Healthy_Diet = Fruits + Veggies")
+plt.xlabel("Healthy_Diet (0 = aucun, 1 = un seul, 2 = les deux)")
+plt.ylabel("Taux moyen de diabète")
+plt.ylim(0, healthy_rate["diabetes_rate"].max() + 0.05)
+plt.grid(True, alpha=0.3)
+plt.show()
+
+print(healthy_rate)
+
+
+plt.figure(figsize=(7,5))
+sns.pointplot(
+    data=eda_data,
+    x="Fruits",
+    y="Diabetes_binary",
+    hue="Veggies",
+    errorbar=None,
+    markers=["o", "s"],
+    linestyles=["-", "--"]
+)
+plt.title("Taux de diabète selon Fruits et Veggies")
+plt.xlabel("Fruits (0 = Non, 1 = Oui)")
+plt.ylabel("Taux moyen de diabète")
+plt.ylim(0, eda_data["Diabetes_binary"].mean() + 0.15)
+plt.legend(title="Veggies")
+plt.grid(True, alpha=0.3)
+plt.show()
+
+
+
+heatmap_data = con.execute("""
+SELECT
+    Fruits,
+    Veggies,
+    AVG(Diabetes_binary) * 100 AS diabetes_rate
+FROM diabetes_eda
+GROUP BY Fruits, Veggies
+ORDER BY Fruits, Veggies
+""").df()
+
+heatmap_pivot = heatmap_data.pivot(index="Fruits", columns="Veggies", values="diabetes_rate")
+
+plt.figure(figsize=(6,5))
+sns.heatmap(heatmap_pivot, annot=True, fmt=".2f", cmap="YlOrRd")
+plt.title("Taux de diabète (%) selon Fruits et Veggies")
+plt.xlabel("Veggies")
+plt.ylabel("Fruits")
+plt.show()
+
+

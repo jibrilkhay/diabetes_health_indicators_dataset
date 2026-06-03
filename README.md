@@ -20,7 +20,7 @@ Le diabète est une maladie chronique majeure : 34,2 millions d'Américains sont
 
 ---
 
-## ⚠️ 2. Limites Critiques du Dataset (À LIRE ABSOLUMENT)
+## ⚠️ 2. Limites Critiques du Dataset
 
 Une analyse approfondie du dataset révèle des biais méthodologiques fondamentaux. **Ce jeu de données n'est pas adapté pour prédire qui va développer un diabète à l'avenir.**
 
@@ -28,7 +28,7 @@ Une analyse approfondie du dataset révèle des biais méthodologiques fondament
 * **Mélange des types de diabète :** Les diabètes de type 1 (auto-immun) et de type 2 (lié au mode de vie) sont regroupés dans la même variable cible, ce qui dilue les corrélations.
 * **Les "Faux Sains" :** De nombreuses personnes classées comme "saines" (0) peuvent être en phase de prédiabète non diagnostiqué, ce qui ajoute du bruit au modèle.
 
-💡 **Recommandation de modélisation :** Notre but ici est donc d'utiliser ce dataset pour comprendre si à un instant t donné , une personne ayant certains marqueurs associés au diabète a donc dde grandes chances de le développer ou de l'avoir développé ? (Prédiction à un instant donné) .
+💡 **Véritable objectif :** Notre but ici est donc d'utiliser ce dataset pour comprendre si à un instant t donné , une personne ayant certains marqueurs associés au diabète a donc dde grandes chances de le développer ou de l'avoir développé ? (Prédiction à un instant donné) . Notre question métier en lien avec est donc d'analyser les différentes corrélations pour avoir un mode de vie sain, et donc réduire au maximum le risque de diabète ici !
 
 ---
 

@@ -1,5 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun  3 11:29:05 2026
+
+@author: khjib
+"""
+
 import pandas as pd
 import duckdb
+import matplotlib
+
+# On force l'utilisation du moteur d'affichage Mac avant d'importer pyplot
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -266,511 +276,357 @@ GROUP BY GenHlth, GenHlth_label
 ORDER BY GenHlth
 """).df()
 
-# ==============================
-# PLOTS EDA - DIABETES PROJECT
-# ==============================
 
 # ============================================================
-# FEATURE ENGINEERING VISUEL - VERSION SIMPLE ET COHÉRENTE
-# On combine uniquement les variables ayant la même logique / tendance
+# DATA VISUALISATION - VERSION FINALE RAPPORT
+# Question métier :
+# Comment adapter notre style de vie afin de réduire le risque de diabète ?
 # ============================================================
 
-import pandas as pd
+import os
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Récupérer la table EDA
+# Dossier de sauvegarde
+os.makedirs("figures_data_visualisation", exist_ok=True)
+
+sns.set_theme(style="whitegrid", context="notebook")
+
+# Récupération de la table EDA
 eda_data = con.execute("""
 SELECT *
 FROM diabetes_eda
 """).df()
 
 
-# ============================================================
-# 1. Création des features combinées cohérentes
-# ============================================================
-
-con.execute("""
-DROP TABLE IF EXISTS diabetes_combined_features;
-
-CREATE TABLE diabetes_combined_features AS
-SELECT
-    *,
-
-    -- ========================================================
-    -- Mode de vie sain : variables protectrices
-    -- PhysActivity, Fruits, Veggies vont dans la même logique
-    -- ========================================================
-    (PhysActivity + Fruits + Veggies) AS Healthy_Lifestyle,
-
-    -- ========================================================
-    -- BMI transformé en score de risque
-    -- 0 = BMI normal / faible
-    -- 1 = surpoids
-    -- 2 = obésité
-    -- ========================================================
-    CASE
-        WHEN BMI < 25 THEN 0
-        WHEN BMI >= 25 AND BMI < 30 THEN 1
-        WHEN BMI >= 30 THEN 2
-        ELSE NULL
-    END AS BMI_Risk,
-
-    -- ========================================================
-    -- Risque métabolique : BMI + hypertension + cholestérol
-    -- ========================================================
-    (
-        CASE
-            WHEN BMI < 25 THEN 0
-            WHEN BMI >= 25 AND BMI < 30 THEN 1
-            WHEN BMI >= 30 THEN 2
-            ELSE 0
-        END
-        + HighBP
-        + HighChol
-    ) AS Metabolic_Risk,
-
-    -- ========================================================
-    -- Risque cardiovasculaire global
-    -- ========================================================
-    (HighBP + HighChol + HeartDiseaseorAttack + Stroke) AS Cardio_Risk,
-
-    -- ========================================================
-    -- Niveau socio-économique
-    -- Education et Income suivent la même logique sociale
-    -- ========================================================
-    (Education + Income) AS Socio_Economic_Level,
-
-    -- ========================================================
-    -- Santé globale
-    -- Ces variables décrivent l'état de santé général
-    -- ========================================================
-    (
-        GenHlth
-        + 2 * DiffWalk
-        + PhysHlth / 30.0
-        + MentHlth / 30.0
-    ) AS Health_Risk,
-
-    -- ========================================================
-    -- Interaction âge + BMI
-    -- ========================================================
-    (Age * BMI) AS Age_BMI_Interaction
-
-FROM diabetes_eda;
-""")
-
-combined_data = con.execute("""
-SELECT *
-FROM diabetes_combined_features
-""").df()
-
-print("Aperçu des features combinées :")
-print(combined_data.head().to_string())
-
-
-# ============================================================
-# 2. Fonction pour afficher le taux de diabète
-# ============================================================
-
-def plot_diabetes_rate(column, title, xlabel=None, rotation=0):
-    rate_data = con.execute(f"""
-    SELECT
-        {column},
-        AVG(Diabetes_binary) * 100 AS diabetes_rate,
-        COUNT(*) AS nb_patients
-    FROM diabetes_combined_features
-    GROUP BY {column}
-    ORDER BY {column}
-    """).df()
-
-    plt.figure(figsize=(7, 4))
-    sns.lineplot(data=rate_data, x=column, y="diabetes_rate", marker="o")
-    plt.title(title)
-    plt.xlabel(xlabel if xlabel else column)
-    plt.ylabel("Taux de diabète (%)")
-    plt.grid(True, alpha=0.3)
-    plt.xticks(rotation=rotation)
+def save_plot(filename):
     plt.tight_layout()
+    plt.savefig(f"figures_data_visualisation/{filename}", dpi=300, bbox_inches="tight")
     plt.show()
 
-    print("\n" + title)
-    print(rate_data.to_string(index=False))
-
-
-def plot_binary_heatmap(var1, var2, title):
-    heatmap_data = con.execute(f"""
-    SELECT
-        {var1},
-        {var2},
-        AVG(Diabetes_binary) * 100 AS diabetes_rate,
-        COUNT(*) AS nb_patients
-    FROM diabetes_combined_features
-    GROUP BY {var1}, {var2}
-    ORDER BY {var1}, {var2}
-    """).df()
-
-    pivot_data = heatmap_data.pivot(index=var1, columns=var2, values="diabetes_rate")
-
-    plt.figure(figsize=(6, 5))
-    sns.heatmap(pivot_data, annot=True, fmt=".2f", cmap="YlOrRd")
-    plt.title(title)
-    plt.xlabel(var2)
-    plt.ylabel(var1)
-    plt.tight_layout()
-    plt.show()
-
-    print("\n" + title)
-    print(heatmap_data.to_string(index=False))
-
 
 # ============================================================
-# 3. Healthy_Lifestyle = PhysActivity + Fruits + Veggies
+# FIGURE 1 — Répartition de la variable cible
+# Objectif : montrer que le dataset est déséquilibré
 # ============================================================
 
-plot_diabetes_rate(
-    "PhysActivity",
-    "Taux de diabète selon l'activité physique",
-    "PhysActivity : 0 = Non, 1 = Oui"
-)
-
-plot_diabetes_rate(
-    "Fruits",
-    "Taux de diabète selon la consommation de fruits",
-    "Fruits : 0 = Non, 1 = Oui"
-)
-
-plot_diabetes_rate(
-    "Veggies",
-    "Taux de diabète selon la consommation de légumes",
-    "Veggies : 0 = Non, 1 = Oui"
-)
-
-plot_diabetes_rate(
-    "Healthy_Lifestyle",
-    "Taux de diabète selon Healthy_Lifestyle = PhysActivity + Fruits + Veggies",
-    "Healthy_Lifestyle : 0 = aucun, 1 = un facteur, 2 = deux facteurs, 3 = trois facteurs"
-)
-
-# Plot avec les 3 variables visibles
-plt.figure(figsize=(7, 5))
-sns.pointplot(
-    data=combined_data,
-    x="Fruits",
-    y="Diabetes_binary",
-    hue="Veggies",
-    errorbar=None
-)
-plt.title("Taux de diabète selon Fruits et Veggies")
-plt.xlabel("Fruits")
-plt.ylabel("Taux moyen de diabète")
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
-plot_binary_heatmap(
-    "Fruits",
-    "Veggies",
-    "Taux de diabète (%) selon Fruits et Veggies"
-)
-
-
-# ============================================================
-# 4. Metabolic_Risk = BMI_Risk + HighBP + HighChol
-# ============================================================
-
-bmi_group_rate = con.execute("""
+target_dist = con.execute("""
 SELECT
-    CASE
-        WHEN BMI < 25 THEN 'Normal/Underweight'
-        WHEN BMI >= 25 AND BMI < 30 THEN 'Overweight'
-        WHEN BMI >= 30 THEN 'Obese'
-    END AS BMI_Group,
-    AVG(Diabetes_binary) * 100 AS diabetes_rate,
-    COUNT(*) AS nb_patients
-FROM diabetes_combined_features
-GROUP BY BMI_Group
-ORDER BY
-    CASE
-        WHEN BMI_Group = 'Normal/Underweight' THEN 1
-        WHEN BMI_Group = 'Overweight' THEN 2
-        WHEN BMI_Group = 'Obese' THEN 3
-    END
+    Diabetes_status,
+    COUNT(*) AS nb_patients,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) AS percentage
+FROM diabetes_eda
+GROUP BY Diabetes_status
+ORDER BY percentage DESC;
 """).df()
 
-plt.figure(figsize=(7, 4))
-sns.lineplot(data=bmi_group_rate, x="BMI_Group", y="diabetes_rate", marker="o")
-plt.title("Taux de diabète selon le groupe de BMI")
-plt.xlabel("BMI Group")
+plt.figure(figsize=(6.5, 4))
+ax = sns.barplot(
+    data=target_dist,
+    x="Diabetes_status",
+    y="percentage"
+)
+
+plt.title("Répartition des patients selon le statut diabétique")
+plt.xlabel("Statut diabétique")
+plt.ylabel("Pourcentage (%)")
+plt.ylim(0, 100)
+
+for i, row in target_dist.iterrows():
+    plt.text(
+        i,
+        row["percentage"] + 1,
+        f'{row["percentage"]:.2f}%',
+        ha="center",
+        fontsize=10
+    )
+
+save_plot("01_target_distribution.png")
+
+
+# ============================================================
+# FIGURE 3 — Taux de diabète selon la catégorie de BMI
+# Objectif : montrer le lien entre poids et diabète
+# ============================================================
+
+bmi_rate = con.execute("""
+SELECT
+    BMI_category,
+    COUNT(*) AS nb_patients,
+    ROUND(AVG(Diabetes_binary) * 100, 2) AS diabetes_rate
+FROM diabetes_eda
+WHERE BMI_category != 'Unknown'
+GROUP BY BMI_category
+ORDER BY
+    CASE
+        WHEN BMI_category = 'Underweight' THEN 1
+        WHEN BMI_category = 'Normal' THEN 2
+        WHEN BMI_category = 'Overweight' THEN 3
+        WHEN BMI_category = 'Obese' THEN 4
+        ELSE 5
+    END;
+""").df()
+
+plt.figure(figsize=(7, 4.5))
+ax = sns.barplot(
+    data=bmi_rate,
+    x="BMI_category",
+    y="diabetes_rate"
+)
+
+plt.title("Taux de diabète selon la catégorie de BMI")
+plt.xlabel("Catégorie de BMI")
 plt.ylabel("Taux de diabète (%)")
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
+plt.ylim(0, max(bmi_rate["diabetes_rate"]) + 5)
 
-print("\nTaux de diabète selon BMI Group")
-print(bmi_group_rate.to_string(index=False))
+for i, row in bmi_rate.iterrows():
+    plt.text(
+        i,
+        row["diabetes_rate"] + 0.5,
+        f'{row["diabetes_rate"]:.2f}%',
+        ha="center",
+        fontsize=10
+    )
 
-plot_diabetes_rate(
-    "HighBP",
-    "Taux de diabète selon HighBP",
-    "HighBP : 0 = Non, 1 = Oui"
+save_plot("03_bmi_category_diabetes_rate.png")
+
+
+# ============================================================
+# FIGURE 4 — Distribution du BMI selon le statut diabétique
+# Objectif : montrer la dispersion, pas seulement la moyenne
+# ============================================================
+
+# On limite les BMI extrêmes pour une meilleure lisibilité graphique
+bmi_plot_data = eda_data[
+    (eda_data["BMI"] >= 10) &
+    (eda_data["BMI"] <= 60)
+].copy()
+
+plt.figure(figsize=(7, 4.5))
+sns.violinplot(
+    data=bmi_plot_data,
+    x="Diabetes_status",
+    y="BMI",
+    inner="quartile",
+    cut=0
 )
 
-plot_diabetes_rate(
-    "HighChol",
-    "Taux de diabète selon HighChol",
-    "HighChol : 0 = Non, 1 = Oui"
-)
+plt.title("Distribution du BMI selon le statut diabétique")
+plt.xlabel("Statut diabétique")
+plt.ylabel("BMI")
 
-plot_diabetes_rate(
-    "Metabolic_Risk",
-    "Taux de diabète selon Metabolic_Risk = BMI_Risk + HighBP + HighChol",
-    "Metabolic_Risk : 0 à 4"
-)
+save_plot("04_bmi_distribution_by_diabetes_status.png")
 
-# Plot avec les 3 variables visibles : BMI + HighBP + HighChol
-bmi_bp_chol_data = con.execute("""
+
+# ============================================================
+# FIGURE 5 — Heatmap âge × catégorie de BMI
+# Objectif : montrer une carte de risque âge + poids
+# ============================================================
+
+age_bmi_heatmap = con.execute("""
 SELECT
-    Diabetes_binary,
-    HighBP,
-    HighChol,
-    CASE
-        WHEN BMI < 25 THEN 'Normal/Underweight'
-        WHEN BMI >= 25 AND BMI < 30 THEN 'Overweight'
-        WHEN BMI >= 30 THEN 'Obese'
-    END AS BMI_Group
-FROM diabetes_combined_features
-""").df()
-
-bmi_order = ["Normal/Underweight", "Overweight", "Obese"]
-
-g = sns.catplot(
-    data=bmi_bp_chol_data,
-    x="BMI_Group",
-    y="Diabetes_binary",
-    hue="HighBP",
-    col="HighChol",
-    kind="point",
-    errorbar=None,
-    order=bmi_order,
-    height=5,
-    aspect=1
-)
-
-g.set_axis_labels("BMI Group", "Taux moyen de diabète")
-g.set_titles("HighChol = {col_name}")
-g.fig.suptitle("Taux de diabète selon BMI, HighBP et HighChol", y=1.05)
-plt.show()
-
-
-# ============================================================
-# 5. Cardio_Risk = HighBP + HighChol + HeartDiseaseorAttack + Stroke
-# ============================================================
-
-plot_diabetes_rate(
-    "HighBP",
-    "Taux de diabète selon HighBP",
-    "HighBP : 0 = Non, 1 = Oui"
-)
-
-plot_diabetes_rate(
-    "HighChol",
-    "Taux de diabète selon HighChol",
-    "HighChol : 0 = Non, 1 = Oui"
-)
-
-plot_diabetes_rate(
-    "HeartDiseaseorAttack",
-    "Taux de diabète selon HeartDiseaseorAttack",
-    "HeartDiseaseorAttack : 0 = Non, 1 = Oui"
-)
-
-plot_diabetes_rate(
-    "Stroke",
-    "Taux de diabète selon Stroke",
-    "Stroke : 0 = Non, 1 = Oui"
-)
-
-plot_diabetes_rate(
-    "Cardio_Risk",
-    "Taux de diabète selon Cardio_Risk = HighBP + HighChol + HeartDiseaseorAttack + Stroke",
-    "Cardio_Risk : 0 à 4"
-)
-
-
-# ============================================================
-# 6. Socio_Economic_Level = Education + Income
-# ============================================================
-
-plot_diabetes_rate(
-    "Education",
-    "Taux de diabète selon Education",
-    "Education"
-)
-
-plot_diabetes_rate(
-    "Income",
-    "Taux de diabète selon Income",
-    "Income"
-)
-
-socio_group_rate = con.execute("""
-SELECT
-    CASE
-        WHEN Socio_Economic_Level <= 6 THEN 'Low'
-        WHEN Socio_Economic_Level <= 9 THEN 'Medium'
-        WHEN Socio_Economic_Level <= 12 THEN 'High'
-        ELSE 'Very high'
-    END AS Socio_Group,
-    AVG(Diabetes_binary) * 100 AS diabetes_rate,
+    Age,
+    Age_label,
+    BMI_category,
+    ROUND(AVG(Diabetes_binary) * 100, 2) AS diabetes_rate,
     COUNT(*) AS nb_patients
-FROM diabetes_combined_features
-GROUP BY Socio_Group
-ORDER BY
+FROM diabetes_eda
+WHERE BMI_category IN ('Normal', 'Overweight', 'Obese')
+GROUP BY Age, Age_label, BMI_category
+ORDER BY Age,
     CASE
-        WHEN Socio_Group = 'Low' THEN 1
-        WHEN Socio_Group = 'Medium' THEN 2
-        WHEN Socio_Group = 'High' THEN 3
+        WHEN BMI_category = 'Normal' THEN 1
+        WHEN BMI_category = 'Overweight' THEN 2
+        WHEN BMI_category = 'Obese' THEN 3
         ELSE 4
-    END
+    END;
 """).df()
 
-plt.figure(figsize=(7, 4))
-sns.lineplot(data=socio_group_rate, x="Socio_Group", y="diabetes_rate", marker="o")
-plt.title("Taux de diabète selon Socio_Economic_Level = Education + Income")
-plt.xlabel("Niveau socio-économique")
-plt.ylabel("Taux de diabète (%)")
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
-print("\nTaux de diabète selon Socio_Economic_Level")
-print(socio_group_rate.to_string(index=False))
-
-
-# ============================================================
-# 7. Health_Risk = GenHlth + DiffWalk + PhysHlth + MentHlth
-# ============================================================
-
-plot_diabetes_rate(
-    "GenHlth",
-    "Taux de diabète selon GenHlth",
-    "GenHlth : 1 = excellent, 5 = poor"
+pivot_age_bmi = age_bmi_heatmap.pivot(
+    index="BMI_category",
+    columns="Age_label",
+    values="diabetes_rate"
 )
 
-plot_diabetes_rate(
-    "DiffWalk",
-    "Taux de diabète selon DiffWalk",
-    "DiffWalk : 0 = Non, 1 = Oui"
-)
-
-health_group_rate = con.execute("""
-SELECT
-    CASE
-        WHEN Health_Risk < 3 THEN 'Low'
-        WHEN Health_Risk < 5 THEN 'Medium'
-        WHEN Health_Risk < 7 THEN 'High'
-        ELSE 'Very high'
-    END AS Health_Risk_Group,
-    AVG(Diabetes_binary) * 100 AS diabetes_rate,
-    COUNT(*) AS nb_patients
-FROM diabetes_combined_features
-GROUP BY Health_Risk_Group
-ORDER BY
-    CASE
-        WHEN Health_Risk_Group = 'Low' THEN 1
-        WHEN Health_Risk_Group = 'Medium' THEN 2
-        WHEN Health_Risk_Group = 'High' THEN 3
-        ELSE 4
-    END
-""").df()
-
-plt.figure(figsize=(7, 4))
-sns.lineplot(data=health_group_rate, x="Health_Risk_Group", y="diabetes_rate", marker="o")
-plt.title("Taux de diabète selon Health_Risk = GenHlth + DiffWalk + PhysHlth + MentHlth")
-plt.xlabel("Health_Risk group")
-plt.ylabel("Taux de diabète (%)")
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
-print("\nTaux de diabète selon Health_Risk")
-print(health_group_rate.to_string(index=False))
-
-
-# ============================================================
-# 8. Age_BMI_Interaction = Age * BMI
-# ============================================================
-
-plot_diabetes_rate(
-    "Age",
-    "Taux de diabète selon Age",
-    "Age"
-)
-
-age_bmi_rate = con.execute("""
-SELECT
-    CASE
-        WHEN Age_BMI_Interaction < 150 THEN 'Low'
-        WHEN Age_BMI_Interaction < 250 THEN 'Medium'
-        WHEN Age_BMI_Interaction < 350 THEN 'High'
-        ELSE 'Very high'
-    END AS Age_BMI_Group,
-    AVG(Diabetes_binary) * 100 AS diabetes_rate,
-    COUNT(*) AS nb_patients
-FROM diabetes_combined_features
-GROUP BY Age_BMI_Group
-ORDER BY
-    CASE
-        WHEN Age_BMI_Group = 'Low' THEN 1
-        WHEN Age_BMI_Group = 'Medium' THEN 2
-        WHEN Age_BMI_Group = 'High' THEN 3
-        ELSE 4
-    END
-""").df()
-
-plt.figure(figsize=(7, 4))
-sns.lineplot(data=age_bmi_rate, x="Age_BMI_Group", y="diabetes_rate", marker="o")
-plt.title("Taux de diabète selon Age_BMI_Interaction = Age x BMI")
-plt.xlabel("Age x BMI group")
-plt.ylabel("Taux de diabète (%)")
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
-print("\nTaux de diabète selon Age_BMI_Interaction")
-print(age_bmi_rate.to_string(index=False))
-
-
-# ============================================================
-# 9. Corrélation finale des features combinées
-# ============================================================
-
-combined_features = [
-    "Healthy_Lifestyle",
-    "BMI_Risk",
-    "Metabolic_Risk",
-    "Cardio_Risk",
-    "Socio_Economic_Level",
-    "Health_Risk",
-    "Age_BMI_Interaction"
+pivot_age_bmi = pivot_age_bmi.loc[
+    ["Normal", "Overweight", "Obese"]
 ]
 
-corr_combined = (
-    combined_data[["Diabetes_binary"] + combined_features]
-    .corr()["Diabetes_binary"]
-    .drop("Diabetes_binary")
-    .sort_values(key=lambda x: abs(x), ascending=False)
+plt.figure(figsize=(12, 4.5))
+sns.heatmap(
+    pivot_age_bmi,
+    annot=True,
+    fmt=".1f",
+    cmap="YlOrRd",
+    linewidths=0.5
 )
 
-plt.figure(figsize=(10, 6))
-sns.barplot(x=corr_combined.values, y=corr_combined.index)
-plt.title("Corrélation des features combinées avec Diabetes_binary")
+plt.title("Carte de risque : taux de diabète selon l'âge et le BMI")
+plt.xlabel("Groupe d'âge")
+plt.ylabel("Catégorie de BMI")
+plt.xticks(rotation=45)
+
+save_plot("05_risk_map_age_bmi.png")
+
+
+# ============================================================
+# FIGURE 6 — Heatmap hypertension × cholestérol
+# Objectif : montrer deux signaux médicaux associés au diabète
+# ============================================================
+
+bp_chol_heatmap = con.execute("""
+SELECT
+    HighBP,
+    HighChol,
+    ROUND(AVG(Diabetes_binary) * 100, 2) AS diabetes_rate,
+    COUNT(*) AS nb_patients
+FROM diabetes_eda
+GROUP BY HighBP, HighChol
+ORDER BY HighBP, HighChol;
+""").df()
+
+pivot_bp_chol = bp_chol_heatmap.pivot(
+    index="HighBP",
+    columns="HighChol",
+    values="diabetes_rate"
+)
+
+plt.figure(figsize=(6.5, 4.8))
+sns.heatmap(
+    pivot_bp_chol,
+    annot=True,
+    fmt=".2f",
+    cmap="YlOrRd",
+    linewidths=0.5
+)
+
+plt.title("Taux de diabète selon hypertension et cholestérol")
+plt.xlabel("HighChol : 0 = normal, 1 = élevé")
+plt.ylabel("HighBP : 0 = non, 1 = oui")
+
+save_plot("06_heatmap_highbp_highchol.png")
+
+
+# ============================================================
+# FIGURE 7 — Heatmap santé générale × activité physique
+# Objectif : relier état de santé perçu et comportement modifiable
+# ============================================================
+
+gen_phys_heatmap = con.execute("""
+SELECT
+    GenHlth,
+    GenHlth_label,
+    PhysActivity,
+    ROUND(AVG(Diabetes_binary) * 100, 2) AS diabetes_rate,
+    COUNT(*) AS nb_patients
+FROM diabetes_eda
+GROUP BY GenHlth, GenHlth_label, PhysActivity
+ORDER BY GenHlth, PhysActivity;
+""").df()
+
+pivot_gen_phys = gen_phys_heatmap.pivot(
+    index="GenHlth_label",
+    columns="PhysActivity",
+    values="diabetes_rate"
+)
+
+# Ordre logique de la santé générale
+pivot_gen_phys = pivot_gen_phys.loc[
+    ["Excellent", "Very good", "Good", "Fair", "Poor"]
+]
+
+plt.figure(figsize=(7, 5))
+sns.heatmap(
+    pivot_gen_phys,
+    annot=True,
+    fmt=".2f",
+    cmap="YlOrRd",
+    linewidths=0.5
+)
+
+plt.title("Taux de diabète selon santé générale et activité physique")
+plt.xlabel("PhysActivity : 0 = non, 1 = oui")
+plt.ylabel("Santé générale déclarée")
+
+save_plot("07_heatmap_genhlth_physactivity.png")
+
+
+# ============================================================
+# FIGURE 8 — Matrice de corrélation complète
+# Objectif : vue globale des relations entre variables
+# ============================================================
+
+numeric_cols = [
+    "Diabetes_binary",
+    "HighBP",
+    "HighChol",
+    "CholCheck",
+    "BMI",
+    "Smoker",
+    "Stroke",
+    "HeartDiseaseorAttack",
+    "PhysActivity",
+    "Fruits",
+    "Veggies",
+    "HvyAlcoholConsump",
+    "AnyHealthcare",
+    "NoDocbcCost",
+    "GenHlth",
+    "MentHlth",
+    "PhysHlth",
+    "DiffWalk",
+    "Sex",
+    "Age",
+    "Education",
+    "Income"
+]
+
+corr_matrix = eda_data[numeric_cols].corr()
+
+plt.figure(figsize=(16, 10))
+sns.heatmap(
+    corr_matrix,
+    annot=True,
+    fmt=".2f",
+    cmap="YlOrRd",
+    linewidths=0.3,
+    cbar=True
+)
+
+plt.title("Matrice de corrélation des variables")
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+save_plot("08_correlation_matrix.png")
+
+
+# ============================================================
+# Bonus : corrélation avec la cible uniquement
+# Plus lisible que la matrice complète, utile si besoin
+# ============================================================
+
+corr_target = (
+    corr_matrix["Diabetes_binary"]
+    .drop("Diabetes_binary")
+    .sort_values(ascending=False)
+)
+
+plt.figure(figsize=(8, 7))
+sns.barplot(
+    x=corr_target.values,
+    y=corr_target.index
+)
+
+plt.title("Corrélation des variables avec Diabetes_binary")
 plt.xlabel("Corrélation")
-plt.ylabel("Features combinées")
+plt.ylabel("Variables")
 plt.axvline(0, color="black", linewidth=1)
-plt.tight_layout()
-plt.show()
+
+save_plot("09_correlation_with_target.png")
+
+
+print("Figures sauvegardées dans le dossier : figures_data_visualisation/")
 
 print("\nCorrélation des features combinées avec Diabetes_binary :")
 print(corr_combined.to_string())

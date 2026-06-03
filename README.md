@@ -34,7 +34,7 @@ Une analyse approfondie du dataset révèle des biais méthodologiques fondament
 
 ## 📖 3. Dictionnaire des Variables (Features)
 
-Le dataset contient 21 variables explicatives. Voici leur signification :
+Le dataset contient 21 variables explicatives. Voici leur signification avant regroupement de certaines lors du pre-processing !
 
 ### Indicateurs Médicaux
 * **`HighBP`** : Hypertension artérielle diagnostiquée par un professionnel de santé (0=Non, 1=Oui).

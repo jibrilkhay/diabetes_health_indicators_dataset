@@ -3,8 +3,7 @@
 
 # 📊 Documentation du Jeu de Données : Indicateurs de Santé du Diabète (BRFSS 2015)
 
-Ce document récapitule les informations essentielles concernant le jeu de données "Diabetes Health Indicators" issu du Kaggle, son dictionnaire de variables, ainsi que des avertissements critiques sur son utilisation pour l'apprentissage automatique (Machine Learning).
-
+Ce document récapitule les informations essentielles concernant le jeu de données "Diabetes Health Indicators" issu du Kaggle, son dictionnaire de variables, ainsi qu'un avis critique sur l'utilisation de ces données pour la prédiction du diabète de type 2.
 ---
 
 ## 📋 1. Contexte et Origine

@@ -11,7 +11,7 @@ Ce document récapitule les informations essentielles concernant le jeu de donn�
 
 Ce jeu de données provient du **BRFSS (Behavioral Risk Factor Surveillance System)** de l'année 2015, une enquête téléphonique annuelle menée par le CDC (Centers for Disease Control and Prevention) aux États-Unis. 
 
-Le diabète est une maladie chronique majeure : 34,2 millions d'Américains sont diabétiques et 88 millions sont prédiabétiques (dont une grande majorité l'ignore). L'objectif initial de ce dataset est d'explorer les facteurs de risque et de tenter de construire des modèles prédictifs.
+Le diabète est une maladie chronique majeure : 34,2 millions d'Américains sont diabétiques et 88 millions sont prédiabétiques (dont une grande majorité l'ignore). L'objectif initial de ce dataset est d'explorer les facteurs de risque et de tenter de construire des modèles prédictifs. NOus avons personnellement choisi le jeu de données avec les 2 classes binaires.
 
 ### Les 3 fichiers disponibles :
 1. **`diabetes_012_health_indicators`** (253 680 lignes) : 3 classes (0 = sain, 1 = prédiabète, 2 = diabète). Déséquilibré.

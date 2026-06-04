@@ -1,632 +1,79 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun  3 11:29:05 2026
+\documentclass[10pt,a4paper]{extarticle}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{hmargin=0.85cm,vmargin=0.75cm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{microtype}
 
-@author: khjib
-"""
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\renewcommand{\baselinestretch}{0.96}
 
-import pandas as pd
-import duckdb
-import matplotlib
+% Captions plus grandes et plus lisibles
+\usepackage[font=small,labelfont=bf,skip=3pt]{caption}
 
-# On force l'utilisation du moteur d'affichage Mac avant d'importer pyplot
+\begin{document}
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-# ==============================
-# 1. Charger le CSV
-# ==============================
-chemin = "/Users/khjib/downloads/archive/diabetes_binary_health_indicators_BRFSS2015.csv"
-Original_data = pd.read_csv(chemin)
+\section*{Data visualisation : lecture des facteurs associés au diabète}
 
-con = duckdb.connect()
-con.register("Original_data", Original_data)
 
+Dans cette partie, nous ne cherchons pas à afficher toutes les variables du jeu de données, mais à sélectionner les visualisations qui font apparaître les tendances les plus lisibles. L'objectif est de passer d'une lecture brute des colonnes à une lecture par profils, en montrant comment le BMI, l'âge, l'état de santé et certains indicateurs médicaux structurent la présence du diabète dans les données.
 
-# ==============================
-# 2. Créer la table brute
-# ==============================
-con.execute("""
-DROP TABLE IF EXISTS diabetes_raw;
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.42\linewidth]{Figure_3.png}
+    \caption{Distribution du BMI selon le statut diabétique. Les patients diabétiques présentent globalement des valeurs de BMI plus élevées, mais les deux distributions se chevauchent nettement.}
+    \label{fig:bmi_distribution}
+\end{figure}
 
-CREATE TABLE diabetes_raw AS
-SELECT *
-FROM Original_data;
-""")
+La figure \ref{fig:bmi_distribution} nuance la lecture du poids : elle montre la dispersion complète plutôt qu'une simple moyenne. Le décalage du BMI vers le haut chez les patients diabétiques est visible, mais le chevauchement important rappelle que le diabète ne se résume pas au poids. Le BMI est donc un signal important, lié au mode de vie, mais il doit être interprété avec d'autres dimensions du profil patient.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.94\linewidth]{Figure_4.png}
+    \caption{Carte de risque : taux de diabète selon le groupe d'âge et la catégorie de BMI.}
+    \label{fig:age_bmi_heatmap}
+\end{figure}
 
-# ==============================
-# 3. Créer la table EDA
-# ==============================
-con.execute("""
-DROP TABLE IF EXISTS diabetes_eda;
+La figure \ref{fig:age_bmi_heatmap} est la visualisation la plus structurante. Elle croise une variable non modifiable, l'âge, avec un facteur fortement lié au style de vie, le BMI. Chez les individus avec un BMI normal, le taux de diabète reste inférieur à 12\% même aux âges élevés. Chez les patients obèses, le taux dépasse 20\% dès 50--54 ans, atteint 29,2\% entre 60 et 64 ans, puis culmine autour de 35\% entre 70 et 74 ans. Cette carte montre que le risque dépend d'un profil : l'âge amplifie fortement l'effet du BMI. Le message métier est clair : on ne peut pas agir sur l'âge, mais le contrôle du poids peut limiter l'entrée dans les zones de risque les plus élevées.
 
-CREATE TABLE diabetes_eda AS
-SELECT
-    CAST(Diabetes_binary AS INTEGER) AS Diabetes_binary,
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.485\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{Figure_5.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.485\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{Figure_6.png}
+    \end{minipage}
+    \caption{Cartes de chaleur des signaux cliniques et comportementaux : hypertension/cholestérol à gauche, santé générale/activité physique à droite.}
+    \label{fig:clinical_behavioral_heatmaps}
+\end{figure}
 
-    CASE
-        WHEN Diabetes_binary = 0 THEN 'No Diabetes'
-        WHEN Diabetes_binary = 1 THEN 'Diabetes'
-        ELSE 'Unknown'
-    END AS Diabetes_status,
+La carte hypertension--cholestérol montre une hausse progressive du taux de diabète lorsque les signaux médicaux se cumulent : 4,19\% sans facteur, 10,42\% avec cholestérol seul, 16,73\% avec hypertension seule, et 29,71\% lorsque les deux sont présents. La carte santé générale--activité physique relie un indicateur subjectif de santé à un comportement modifiable : à chaque niveau de santé déclarée, les personnes actives présentent un taux plus faible que les personnes inactives. L'activité physique apparaît donc comme un facteur associé à un profil plus favorable, sans annuler l'effet d'une mauvaise santé générale.
 
-    CAST(HighBP AS INTEGER) AS HighBP,
-    CASE
-        WHEN HighBP = 0 THEN 'No High BP'
-        WHEN HighBP = 1 THEN 'High BP'
-        ELSE 'Unknown'
-    END AS HighBP_label,
 
-    CAST(HighChol AS INTEGER) AS HighChol,
-    CASE
-        WHEN HighChol = 0 THEN 'No High Cholesterol'
-        WHEN HighChol = 1 THEN 'High Cholesterol'
-        ELSE 'Unknown'
-    END AS HighChol_label,
 
-    CAST(CholCheck AS INTEGER) AS CholCheck,
 
-    CAST(BMI AS INTEGER) AS BMI,
 
-    CASE
-        WHEN BMI < 18.5 THEN 'Underweight'
-        WHEN BMI >= 18.5 AND BMI < 25 THEN 'Normal'
-        WHEN BMI >= 25 AND BMI < 30 THEN 'Overweight'
-        WHEN BMI >= 30 THEN 'Obese'
-        ELSE 'Unknown'
-    END AS BMI_category,
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.54\linewidth]{Figure_8.png}
+    \caption{Corrélation des variables avec \texttt{Diabetes\_binary}. Cette lecture synthétique met en évidence les variables les plus associées à la cible.}
+    \label{fig:corr_target}
+\end{figure}
 
-    CAST(Smoker AS INTEGER) AS Smoker,
-    CASE
-        WHEN Smoker = 0 THEN 'Non-smoker'
-        WHEN Smoker = 1 THEN 'Smoker'
-        ELSE 'Unknown'
-    END AS Smoker_label,
+La figure \ref{fig:corr_target} rend la matrice précédente plus lisible en isolant la corrélation avec la cible. Elle confirme le poids des variables de santé générale, d'hypertension, de difficulté à marcher, de BMI, de cholestérol et d'âge. Les corrélations négatives de \texttt{PhysActivity}, \texttt{Education} et \texttt{Income} suggèrent des profils statistiquement plus favorables, mais elles doivent rester interprétées comme des associations. Le résultat important n'est donc pas l'existence d'un facteur unique, mais la convergence de plusieurs signaux cohérents.
 
-    CAST(Stroke AS INTEGER) AS Stroke,
-    CAST(HeartDiseaseorAttack AS INTEGER) AS HeartDiseaseorAttack,
-    CAST(PhysActivity AS INTEGER) AS PhysActivity,
-    CAST(Fruits AS INTEGER) AS Fruits,
-    CAST(Veggies AS INTEGER) AS Veggies,
-    CAST(HvyAlcoholConsump AS INTEGER) AS HvyAlcoholConsump,
-    CAST(AnyHealthcare AS INTEGER) AS AnyHealthcare,
-    CAST(NoDocbcCost AS INTEGER) AS NoDocbcCost,
+\vspace{0.35cm}
 
-    CAST(GenHlth AS INTEGER) AS GenHlth,
-    CASE
-        WHEN GenHlth = 1 THEN 'Excellent'
-        WHEN GenHlth = 2 THEN 'Very good'
-        WHEN GenHlth = 3 THEN 'Good'
-        WHEN GenHlth = 4 THEN 'Fair'
-        WHEN GenHlth = 5 THEN 'Poor'
-        ELSE 'Unknown'
-    END AS GenHlth_label,
+\textbf{Synthèse.} L'analyse visuelle fait ressortir une logique d'accumulation du risque. Le BMI est central, mais il devient beaucoup plus informatif lorsqu'il est croisé avec l'âge. L'hypertension et le cholestérol servent de signaux d'alerte métaboliques, tandis que l'activité physique est associée à des taux plus faibles, y compris à santé générale comparable. Ces résultats ne démontrent pas une causalité directe, mais ils orientent clairement la suite de l'étude vers le feature engineering et la régression logistique.
 
-    CAST(MentHlth AS INTEGER) AS MentHlth,
-    CAST(PhysHlth AS INTEGER) AS PhysHlth,
-    CAST(DiffWalk AS INTEGER) AS DiffWalk,
+\end{document}
 
-    CAST(Sex AS INTEGER) AS Sex,
-    CASE
-        WHEN Sex = 0 THEN 'Female'
-        WHEN Sex = 1 THEN 'Male'
-        ELSE 'Unknown'
-    END AS Sex_label,
 
-    CAST(Age AS INTEGER) AS Age,
-    CASE
-        WHEN Age = 1 THEN '18-24'
-        WHEN Age = 2 THEN '25-29'
-        WHEN Age = 3 THEN '30-34'
-        WHEN Age = 4 THEN '35-39'
-        WHEN Age = 5 THEN '40-44'
-        WHEN Age = 6 THEN '45-49'
-        WHEN Age = 7 THEN '50-54'
-        WHEN Age = 8 THEN '55-59'
-        WHEN Age = 9 THEN '60-64'
-        WHEN Age = 10 THEN '65-69'
-        WHEN Age = 11 THEN '70-74'
-        WHEN Age = 12 THEN '75-79'
-        WHEN Age = 13 THEN '80+'
-        ELSE 'Unknown'
-    END AS Age_label,
-
-    CAST(Education AS INTEGER) AS Education,
-
-    CAST(Income AS INTEGER) AS Income,
-    CASE
-        WHEN Income = 1 THEN '< $10k'
-        WHEN Income = 2 THEN '$10k-$15k'
-        WHEN Income = 3 THEN '$15k-$20k'
-        WHEN Income = 4 THEN '$20k-$25k'
-        WHEN Income = 5 THEN '$25k-$35k'
-        WHEN Income = 6 THEN '$35k-$50k'
-        WHEN Income = 7 THEN '$50k-$75k'
-        WHEN Income = 8 THEN '$75k+'
-        ELSE 'Unknown'
-    END AS Income_label
-
-FROM diabetes_raw;
-""")
-
-
-# ==============================
-# 4. Voir la table EDA
-# ==============================
-eda_data = con.execute("""
-SELECT *
-FROM diabetes_eda
-""").df()
-
-print("--- 4. Aperçu de la table ---")
-print(eda_data.head())
-
-
-# ==============================
-# 5. Check nombre de lignes
-# ==============================
-print("\n--- 5. Nombre de lignes ---")
-print(con.execute("""
-SELECT COUNT(*) AS nombre_lignes
-FROM diabetes_eda
-""").df())
-
-
-# ==============================
-# 6. Check valeurs manquantes
-# ==============================
-print("\n--- 6. Valeurs manquantes ---")
-print(eda_data.isnull().sum())
-
-
-# ==============================
-# 7. Check doublons
-# ==============================
-print("\n--- 7. Doublons ---")
-print(eda_data.duplicated().sum())
-
-
-# ==============================
-# 8. Check répartition de la target
-# ==============================
-print("\n--- 8. Répartition cible ---")
-print(con.execute("""
-SELECT 
-    Diabetes_status,
-    COUNT(*) AS nombre_patients
-FROM diabetes_eda
-GROUP BY Diabetes_status
-ORDER BY nombre_patients DESC
-""").df())
-
-
-# ==============================
-# 9. Check valeurs des colonnes binaires
-# ==============================
-binary_cols = [
-    "Diabetes_binary", "HighBP", "HighChol", "CholCheck",
-    "Smoker", "Stroke", "HeartDiseaseorAttack", "PhysActivity",
-    "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare",
-    "NoDocbcCost", "DiffWalk", "Sex"
-]
-
-print("\n--- 9. Colonnes Binaires ---")
-for col in binary_cols:
-    print("\n---", col, "---")
-    print(con.execute(f"""
-        SELECT 
-            {col},
-            COUNT(*) AS nombre
-        FROM diabetes_eda
-        GROUP BY {col}
-        ORDER BY {col}
-    """).df())
-
-
-# ==============================
-# 10. Check valeurs des colonnes ordinales
-# ==============================
-ordinal_cols = ["GenHlth", "Age", "Education", "Income"]
-
-print("\n--- 10. Colonnes Ordinales ---")
-for col in ordinal_cols:
-    print("\n---", col, "---")
-    print(con.execute(f"""
-        SELECT 
-            {col},
-            COUNT(*) AS nombre
-        FROM diabetes_eda
-        GROUP BY {col}
-        ORDER BY {col}
-    """).df())
-
-
-# ==============================
-# 11. Check variables numériques
-# ==============================
-print("\n--- 11. Variables numériques ---")
-print(con.execute("""
-SELECT
-    MIN(BMI) AS min_bmi,
-    MAX(BMI) AS max_bmi,
-    AVG(BMI) AS avg_bmi,
-
-    MIN(MentHlth) AS min_menthlth,
-    MAX(MentHlth) AS max_menthlth,
-    AVG(MentHlth) AS avg_menthlth,
-
-    MIN(PhysHlth) AS min_physhlth,
-    MAX(PhysHlth) AS max_physhlth,
-    AVG(PhysHlth) AS avg_physhlth
-FROM diabetes_eda
-""").df())
-
-
-
-
-
-genhlth_rate = con.execute("""
-SELECT 
-    GenHlth,
-    GenHlth_label,
-    AVG(Diabetes_binary) * 100 AS diabetes_rate
-FROM diabetes_eda
-GROUP BY GenHlth, GenHlth_label
-ORDER BY GenHlth
-""").df()
-
-
-# ============================================================
-# DATA VISUALISATION - VERSION FINALE RAPPORT
-# Question métier :
-# Comment adapter notre style de vie afin de réduire le risque de diabète ?
-# ============================================================
-
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Dossier de sauvegarde
-os.makedirs("figures_data_visualisation", exist_ok=True)
-
-sns.set_theme(style="whitegrid", context="notebook")
-
-# Récupération de la table EDA
-eda_data = con.execute("""
-SELECT *
-FROM diabetes_eda
-""").df()
-
-
-def save_plot(filename):
-    plt.tight_layout()
-    plt.savefig(f"figures_data_visualisation/{filename}", dpi=300, bbox_inches="tight")
-    plt.show()
-
-
-# ============================================================
-# FIGURE 1 — Répartition de la variable cible
-# Objectif : montrer que le dataset est déséquilibré
-# ============================================================
-
-target_dist = con.execute("""
-SELECT
-    Diabetes_status,
-    COUNT(*) AS nb_patients,
-    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) AS percentage
-FROM diabetes_eda
-GROUP BY Diabetes_status
-ORDER BY percentage DESC;
-""").df()
-
-plt.figure(figsize=(6.5, 4))
-ax = sns.barplot(
-    data=target_dist,
-    x="Diabetes_status",
-    y="percentage"
-)
-
-plt.title("Répartition des patients selon le statut diabétique")
-plt.xlabel("Statut diabétique")
-plt.ylabel("Pourcentage (%)")
-plt.ylim(0, 100)
-
-for i, row in target_dist.iterrows():
-    plt.text(
-        i,
-        row["percentage"] + 1,
-        f'{row["percentage"]:.2f}%',
-        ha="center",
-        fontsize=10
-    )
-
-save_plot("01_target_distribution.png")
-
-
-# ============================================================
-# FIGURE 3 — Taux de diabète selon la catégorie de BMI
-# Objectif : montrer le lien entre poids et diabète
-# ============================================================
-
-bmi_rate = con.execute("""
-SELECT
-    BMI_category,
-    COUNT(*) AS nb_patients,
-    ROUND(AVG(Diabetes_binary) * 100, 2) AS diabetes_rate
-FROM diabetes_eda
-WHERE BMI_category != 'Unknown'
-GROUP BY BMI_category
-ORDER BY
-    CASE
-        WHEN BMI_category = 'Underweight' THEN 1
-        WHEN BMI_category = 'Normal' THEN 2
-        WHEN BMI_category = 'Overweight' THEN 3
-        WHEN BMI_category = 'Obese' THEN 4
-        ELSE 5
-    END;
-""").df()
-
-plt.figure(figsize=(7, 4.5))
-ax = sns.barplot(
-    data=bmi_rate,
-    x="BMI_category",
-    y="diabetes_rate"
-)
-
-plt.title("Taux de diabète selon la catégorie de BMI")
-plt.xlabel("Catégorie de BMI")
-plt.ylabel("Taux de diabète (%)")
-plt.ylim(0, max(bmi_rate["diabetes_rate"]) + 5)
-
-for i, row in bmi_rate.iterrows():
-    plt.text(
-        i,
-        row["diabetes_rate"] + 0.5,
-        f'{row["diabetes_rate"]:.2f}%',
-        ha="center",
-        fontsize=10
-    )
-
-save_plot("03_bmi_category_diabetes_rate.png")
-
-
-# ============================================================
-# FIGURE 4 — Distribution du BMI selon le statut diabétique
-# Objectif : montrer la dispersion, pas seulement la moyenne
-# ============================================================
-
-# On limite les BMI extrêmes pour une meilleure lisibilité graphique
-bmi_plot_data = eda_data[
-    (eda_data["BMI"] >= 10) &
-    (eda_data["BMI"] <= 60)
-].copy()
-
-plt.figure(figsize=(7, 4.5))
-sns.violinplot(
-    data=bmi_plot_data,
-    x="Diabetes_status",
-    y="BMI",
-    inner="quartile",
-    cut=0
-)
-
-plt.title("Distribution du BMI selon le statut diabétique")
-plt.xlabel("Statut diabétique")
-plt.ylabel("BMI")
-
-save_plot("04_bmi_distribution_by_diabetes_status.png")
-
-
-# ============================================================
-# FIGURE 5 — Heatmap âge × catégorie de BMI
-# Objectif : montrer une carte de risque âge + poids
-# ============================================================
-
-age_bmi_heatmap = con.execute("""
-SELECT
-    Age,
-    Age_label,
-    BMI_category,
-    ROUND(AVG(Diabetes_binary) * 100, 2) AS diabetes_rate,
-    COUNT(*) AS nb_patients
-FROM diabetes_eda
-WHERE BMI_category IN ('Normal', 'Overweight', 'Obese')
-GROUP BY Age, Age_label, BMI_category
-ORDER BY Age,
-    CASE
-        WHEN BMI_category = 'Normal' THEN 1
-        WHEN BMI_category = 'Overweight' THEN 2
-        WHEN BMI_category = 'Obese' THEN 3
-        ELSE 4
-    END;
-""").df()
-
-pivot_age_bmi = age_bmi_heatmap.pivot(
-    index="BMI_category",
-    columns="Age_label",
-    values="diabetes_rate"
-)
-
-pivot_age_bmi = pivot_age_bmi.loc[
-    ["Normal", "Overweight", "Obese"]
-]
-
-plt.figure(figsize=(12, 4.5))
-sns.heatmap(
-    pivot_age_bmi,
-    annot=True,
-    fmt=".1f",
-    cmap="YlOrRd",
-    linewidths=0.5
-)
-
-plt.title("Carte de risque : taux de diabète selon l'âge et le BMI")
-plt.xlabel("Groupe d'âge")
-plt.ylabel("Catégorie de BMI")
-plt.xticks(rotation=45)
-
-save_plot("05_risk_map_age_bmi.png")
-
-
-# ============================================================
-# FIGURE 6 — Heatmap hypertension × cholestérol
-# Objectif : montrer deux signaux médicaux associés au diabète
-# ============================================================
-
-bp_chol_heatmap = con.execute("""
-SELECT
-    HighBP,
-    HighChol,
-    ROUND(AVG(Diabetes_binary) * 100, 2) AS diabetes_rate,
-    COUNT(*) AS nb_patients
-FROM diabetes_eda
-GROUP BY HighBP, HighChol
-ORDER BY HighBP, HighChol;
-""").df()
-
-pivot_bp_chol = bp_chol_heatmap.pivot(
-    index="HighBP",
-    columns="HighChol",
-    values="diabetes_rate"
-)
-
-plt.figure(figsize=(6.5, 4.8))
-sns.heatmap(
-    pivot_bp_chol,
-    annot=True,
-    fmt=".2f",
-    cmap="YlOrRd",
-    linewidths=0.5
-)
-
-plt.title("Taux de diabète selon hypertension et cholestérol")
-plt.xlabel("HighChol : 0 = normal, 1 = élevé")
-plt.ylabel("HighBP : 0 = non, 1 = oui")
-
-save_plot("06_heatmap_highbp_highchol.png")
-
-
-# ============================================================
-# FIGURE 7 — Heatmap santé générale × activité physique
-# Objectif : relier état de santé perçu et comportement modifiable
-# ============================================================
-
-gen_phys_heatmap = con.execute("""
-SELECT
-    GenHlth,
-    GenHlth_label,
-    PhysActivity,
-    ROUND(AVG(Diabetes_binary) * 100, 2) AS diabetes_rate,
-    COUNT(*) AS nb_patients
-FROM diabetes_eda
-GROUP BY GenHlth, GenHlth_label, PhysActivity
-ORDER BY GenHlth, PhysActivity;
-""").df()
-
-pivot_gen_phys = gen_phys_heatmap.pivot(
-    index="GenHlth_label",
-    columns="PhysActivity",
-    values="diabetes_rate"
-)
-
-# Ordre logique de la santé générale
-pivot_gen_phys = pivot_gen_phys.loc[
-    ["Excellent", "Very good", "Good", "Fair", "Poor"]
-]
-
-plt.figure(figsize=(7, 5))
-sns.heatmap(
-    pivot_gen_phys,
-    annot=True,
-    fmt=".2f",
-    cmap="YlOrRd",
-    linewidths=0.5
-)
-
-plt.title("Taux de diabète selon santé générale et activité physique")
-plt.xlabel("PhysActivity : 0 = non, 1 = oui")
-plt.ylabel("Santé générale déclarée")
-
-save_plot("07_heatmap_genhlth_physactivity.png")
-
-
-# ============================================================
-# FIGURE 8 — Matrice de corrélation complète
-# Objectif : vue globale des relations entre variables
-# ============================================================
-
-numeric_cols = [
-    "Diabetes_binary",
-    "HighBP",
-    "HighChol",
-    "CholCheck",
-    "BMI",
-    "Smoker",
-    "Stroke",
-    "HeartDiseaseorAttack",
-    "PhysActivity",
-    "Fruits",
-    "Veggies",
-    "HvyAlcoholConsump",
-    "AnyHealthcare",
-    "NoDocbcCost",
-    "GenHlth",
-    "MentHlth",
-    "PhysHlth",
-    "DiffWalk",
-    "Sex",
-    "Age",
-    "Education",
-    "Income"
-]
-
-corr_matrix = eda_data[numeric_cols].corr()
-
-plt.figure(figsize=(16, 10))
-sns.heatmap(
-    corr_matrix,
-    annot=True,
-    fmt=".2f",
-    cmap="YlOrRd",
-    linewidths=0.3,
-    cbar=True
-)
-
-plt.title("Matrice de corrélation des variables")
-plt.xticks(rotation=90)
-plt.yticks(rotation=0)
-
-save_plot("08_correlation_matrix.png")
-
-
-# ============================================================
-# Bonus : corrélation avec la cible uniquement
-# Plus lisible que la matrice complète, utile si besoin
-# ============================================================
-
-corr_target = (
-    corr_matrix["Diabetes_binary"]
-    .drop("Diabetes_binary")
-    .sort_values(ascending=False)
-)
-
-plt.figure(figsize=(8, 7))
-sns.barplot(
-    x=corr_target.values,
-    y=corr_target.index
-)
-
-plt.title("Corrélation des variables avec Diabetes_binary")
-plt.xlabel("Corrélation")
-plt.ylabel("Variables")
-plt.axvline(0, color="black", linewidth=1)
-
-save_plot("09_correlation_with_target.png")
-
-
-print("Figures sauvegardées dans le dossier : figures_data_visualisation/")
-
-print("\nCorrélation des features combinées avec Diabetes_binary :")
-print(corr_combined.to_string())

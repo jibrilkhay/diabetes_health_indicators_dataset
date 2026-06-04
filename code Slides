@@ -1,0 +1,96 @@
+\documentclass{beamer}
+
+% Thème visuel professionnel
+\usetheme{Madrid}
+\usecolortheme{default}
+
+% Encodage et langue
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% Informations de la page de garde
+\title[Data Challenge Diabète]{Prédiction du Diabète : Une approche préventive}
+\subtitle{Data Challenge}
+\author[Y. El Hadiri, F. Accaries, J. Khay]{Yassine El Hadiri \and Florent Accaries \and Jibril Khay}
+\institute[Polytech Nice-Sophia]{Polytech Nice-Sophia}
+\date{Jeudi 4 Juin 2026} % Date de rendu supposée
+
+\begin{document}
+
+% ==========================================
+% SLIDE 1 : PAGE DE GARDE
+% ==========================================
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% ==========================================
+% SLIDE 2 : BUSINESS GOAL
+% ==========================================
+\begin{frame}{Business Goal : Un pré-diagnostic à grande échelle}
+    
+    % Réponse à la question : What is your dataset?
+    \begin{block}{W}
+        \begin{itemize}
+            \item Une base de données construite sur des \textbf{déclarations de santé}.
+            \item Elle croise des \textbf{indicateurs cliniques simples} (hypertension, IMC), des \textbf{habitudes de vie} (sport, alimentation, tabagisme) et un \textbf{profil socio-économique}.
+        \end{itemize}
+    \end{block}
+    
+    \vspace{0.4cm}
+    
+    % Réponse à la question : Why is this dataset useful?
+    \begin{block}{Why is this dataset useful ?}
+        \begin{itemize}
+            \item \textbf{La friction actuelle :} Le dépistage traditionnel repose sur des analyses sanguines (invasives, logistiquement lourdes et coûteuses).
+            \item \textbf{Notre solution :} Transformer un simple questionnaire en un \textbf{premier filtre d'alerte algorithmique}.
+            \item \textbf{L'impact :} Identifier de manière précoce et non-invasive les profils à risque pour mieux orienter les ressources médicales.
+        \end{itemize}
+    \end{block}
+    
+\end{frame}
+% ==========================================
+% SLIDE 3 : DATA DESCRIPTION
+% ==========================================
+\begin{frame}{Data Description : Cartographie de la base de données}
+    
+    \begin{columns}
+        
+        % --- Colonne de gauche : La figure (Histogrammes) ---
+        \begin{column}{0.6\textwidth}
+            \begin{figure}[h]
+                \centering
+                % RAPPEL : Remplacez "histogrammes.png" par le nom exact de votre image uploadée sur Overleaf
+                \includegraphics[width=\textwidth]{histogrammes.png}
+                \caption{Distribution des principales variables de santé}
+                \label{fig:histograms}
+            \end{figure}
+        \end{column}
+        
+        % --- Colonne de droite : Les explications synthétiques ---
+        \begin{column}{0.4\textwidth}
+            \textbf{Aperçu du Dataset :}
+            \vspace{0.2cm}
+            
+            \begin{itemize}
+                \item \textbf{Cible (Target)} : \\ \texttt{Diabetes\_binary} (0 ou 1)
+                \vspace{0.3cm}
+                
+                \item \textbf{21 Features} divisées en :
+                \begin{itemize}
+                    \item \textbf{14 Binaires} \\ (ex: \texttt{HighBP}, \texttt{Smoker})
+                    \vspace{0.1cm}
+                    \item \textbf{4 Ordinales} \\ (ex: \texttt{Age}, \texttt{Income})
+                    \vspace{0.1cm}
+                    \item \textbf{3 Continues} \\ (ex: \texttt{BMI})
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        
+    \end{columns}
+    
+\end{frame}
+
+\end{document}
+

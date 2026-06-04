@@ -1,0 +1,100 @@
+\documentclass[10pt, aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath}
+
+\setbeamertemplate{navigation symbols}{}
+
+\title[Prédiction du Diabète]{Prédiction du Diabète : Une approche préventive }
+\subtitle{Data Challenge }
+\author[El Hadiri, Accaries, Khay]{Yassine El Hadiri \and Florent Accaries \and Jibril Khay }
+\institute[Polytech Nice-Sophia]{Polytech Nice-Sophia }
+\date{Jeudi 4 Juin 2026 }
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{1. Business Goal: Un pré-diagnostic à grande échelle }
+    \textbf{Le Jeu de Données}
+    \begin{itemize}
+        \item Une base de données construite sur des déclarations de santé.
+        \item Elle croise des indicateurs cliniques simples (hypertension, IMC), des habitudes de vie (sport, alimentation, tabagisme).
+    \end{itemize}
+
+    \vspace{0.4cm}
+    \textbf{Pourquoi ce jeu de données est-il utile? }
+    \begin{itemize}
+        \item \textbf{La friction actuelle:} Le dépistage traditionnel repose sur des analyses sanguines (invasives, logistiquement lourdes et coûteuses).
+        \item \textbf{Notre solution:} Transformer un simple questionnaire en un premier filtre d'alerte algorithmique.
+        \item \textbf{L'impact:} Identifier de manière précoce et non-invasive les profils à risque pour mieux orienter les ressources médicales.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{2. Data Description: Cartographie de la base de donné}
+    \textbf{Aperçu du Dataset : }
+    \begin{itemize}
+        \item \textbf{Cible (Target) :} Diabetes\_binary (0 ou 1) [cite: 25, 26]
+        \item \textbf{21 Features} divisées en : 
+        \begin{itemize}
+            \item \textbf{14 Binaires} (ex: HighBP, Smoker) 
+            \item \textbf{4 Ordinales} (ex: Age, Income) 
+            \item \textbf{3 Continues} (ex: BMI) 
+        \end{itemize}
+    \end{itemize}
+     \usepackage{graphicx}
+    \begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.3\textwidth]{nom_de_votre_image.png}
+    \caption{Écrivez ici la légende de votre image}
+    \label{fig:mon_image}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{3. Handcrafted Features : Modéliser la réalité clinique}
+    \textbf{1. Indice de Risque Métabolique (Metabolic Risk Index)}
+    \begin{itemize}
+        \item \textit{Construction :} Agrégation des variables \texttt{BMI} (surpoids), \texttt{HighBP} (Hypertension) et \texttt{HighChol} (Cholestérol).
+        \item \textit{Justification :} Ces trois indicateurs définissent le syndrome métabolique, le précurseur physiologique principal du diabète de type 2. L'algorithme capte ainsi une synergie médicale pertinente.
+    \end{itemize}
+   
+
+    \vspace{0.4cm}
+    \textbf{2. Score d'Hygiène de Vie (Lifestyle Score)}
+    \begin{itemize}
+        \item \textit{Construction :} Somme de l'activité physique et de la consommation de fruits/légumes, pénalisée par le tabagisme.
+        \item \textit{Justification :} Regrouper ces habitudes disparates permet de réduire la dimensionnalité tout en créant un indicateur global et robuste du comportement du patient.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{4. Regression : Le Moteur de Prédiction}
+    \textbf{Choix du Modèle : Régression Logistique}
+    \begin{itemize}
+        \item \textbf{Adaptation au problème :} Parfaitement adaptée pour notre variable cible binaire (\texttt{Diabetes\_binary}).
+        \item \textbf{Storytelling et Interprétabilité :} Contrairement aux réseaux de neurones, la régression logistique fournit des \textit{Odds Ratios}. Nous pouvons expliquer aux médecins l'impact exact de chaque facteur de risque.
+    \end{itemize}
+
+    \vspace{0.4cm}
+    
+    \begin{itemize}
+        \item Application d'une régularisation pour éviter le surapprentissage et sélectionner automatiquement les variables les plus discriminantes.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{5. Conclusion : Impact et Améliorations Futures}
+    \textbf{Bénéfices de cette analyse}
+    \begin{itemize}
+        \item \textbf{Scalabilité :} Un formulaire en ligne suffit pour obtenir un diagnostic préliminaire instantané.
+        \item \textbf{Prévention :} Optimisation des coûts de santé par un ciblage proactif des individus à risque.
+    \end{itemize}
+
+    \vspace{0.4cm}
+    \end{frame}

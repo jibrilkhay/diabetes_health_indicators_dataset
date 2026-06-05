@@ -73,13 +73,6 @@ FROM diabetes_eda;
 # Metabolic_Risk = BMI_Risk + HighBP + HighChol
 # ============================================================
 
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import roc_auc_score, classification_report, confusion_matrix
-
 
 # ============================================================
 # 1. Vérifier les tendances individuelles

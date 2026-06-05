@@ -1,121 +1,75 @@
-diabetes_health_indicators_dataset
-Présentation
+# diabetes_health_indicators_dataset
 
-Ce projet utilise le dataset Diabetes Health Indicators, issu de l’enquête américaine BRFSS 2015 menée par le CDC.
-L’objectif est d’analyser des indicateurs de santé, de mode de vie et de profil socio-économique afin de prédire la présence d’un diabète à partir de données déclaratives.
+## 📊 Documentation du Jeu de Données : Indicateurs de Santé du Diabète (BRFSS 2015)
 
-Nous avons utilisé la version binaire du dataset :
+Ce document récapitule les informations essentielles concernant le jeu de données **Diabetes Health Indicators** issu de Kaggle, son dictionnaire de variables, ainsi qu'un avis critique sur l'utilisation de ces données pour la prédiction du diabète de type 2.
 
-diabetes_binary_health_indicators.csv
+## 📋 1. Contexte et Origine
 
-La variable cible est :
+Ce jeu de données provient du **BRFSS (Behavioral Risk Factor Surveillance System)** de l'année 2015, une enquête téléphonique annuelle menée par le **CDC (Centers for Disease Control and Prevention)** aux États-Unis.
 
-Diabetes_binary = 0 : pas de diabète
-Diabetes_binary = 1 : diabète
-Objectif du projet
+Le diabète est une maladie chronique majeure : **34,2 millions d'Américains** sont diabétiques et **88 millions** sont prédiabétiques, dont une grande majorité l'ignore.
 
-Le but n’est pas de remplacer un diagnostic médical, mais de construire un outil de pré-diagnostic capable d’identifier des profils potentiellement à risque à partir d’un questionnaire simple.
+L'objectif initial de ce dataset est d'explorer les facteurs de risque et de tenter de construire des modèles prédictifs. Nous avons personnellement choisi le jeu de données avec les **2 classes binaires**.
 
-Le projet cherche donc à répondre à la question suivante :
+### Les 3 fichiers disponibles
 
-Quels indicateurs de santé et habitudes de vie sont associés à un risque plus élevé de diabète ?
+- `diabetes_012_health_indicators` : **253 680 lignes**, 3 classes (`0 = sain`, `1 = prédiabète`, `2 = diabète`). Dataset déséquilibré.
+- `diabetes_binary_5050split_health_indicators` : **70 692 lignes**, binaire (`0 = sain`, `1 = prédiabétique/diabétique`). Dataset parfaitement équilibré (`50/50`).
+- `diabetes_binary_health_indicators` : **253 680 lignes**, binaire. Dataset déséquilibré.
 
-Dataset
+## ⚠️ 2. Limites Critiques du Dataset
 
-Le dataset contient 253 680 lignes et 21 variables explicatives.
+Une analyse approfondie du dataset révèle des biais méthodologiques fondamentaux. **Ce jeu de données n'est pas adapté pour prédire qui va développer un diabète à l'avenir.**
 
-Les variables peuvent être regroupées en trois catégories :
+### Causalité inverse
 
-Indicateurs médicaux
-HighBP : hypertension artérielle
-HighChol : cholestérol élevé
-CholCheck : contrôle du cholestérol
-BMI : indice de masse corporelle
-Stroke : antécédent d’AVC
-HeartDiseaseorAttack : maladie cardiaque ou infarctus
-GenHlth : santé générale déclarée
-MentHlth : jours de mauvaise santé mentale
-PhysHlth : jours de mauvaise santé physique
-DiffWalk : difficulté à marcher
-Mode de vie
-Smoker : tabagisme
-PhysActivity : activité physique
-Fruits : consommation de fruits
-Veggies : consommation de légumes
-HvyAlcoholConsump : forte consommation d’alcool
-Facteurs socio-démographiques
-AnyHealthcare : accès à une couverture santé
-NoDocbcCost : renoncement aux soins pour raisons financières
-Sex : sexe
-Age : tranche d’âge
-Education : niveau d’étude
-Income : niveau de revenu
-Limites du dataset
+Les données sont une photographie de l'état actuel. Un patient diagnostiqué diabétique a souvent déjà changé son mode de vie, comme la perte de poids, une meilleure alimentation ou plus de sport, pour se soigner. Le modèle risque donc d'apprendre que "manger sainement = avoir le diabète", ce qui fausse totalement les prédictions.
 
-Ce dataset présente plusieurs limites importantes :
+### Mélange des types de diabète
 
-Les données sont déclaratives, donc potentiellement imprécises.
-Le dataset représente une situation à un instant donné : il ne permet pas de prouver une causalité.
-Les types de diabète ne sont pas distingués.
-Certains patients classés comme non diabétiques peuvent être non diagnostiqués.
-Certaines variables sont binaires alors qu’une mesure continue serait plus informative.
+Les diabètes de type 1, auto-immun, et de type 2, lié au mode de vie, sont regroupés dans la même variable cible, ce qui dilue les corrélations.
 
-Ainsi, le projet doit être interprété comme une analyse de profils associés au diabète, et non comme une preuve médicale causale.
+### Les "faux sains"
 
-Feature engineering
+De nombreuses personnes classées comme "saines" (`0`) peuvent être en phase de prédiabète non diagnostiqué, ce qui ajoute du bruit au modèle.
 
-Afin d’améliorer l’interprétation et la modélisation, nous avons créé plusieurs variables synthétiques :
+## 💡 Véritable objectif
 
-Feature	Formule	Interprétation
-Healthy_Lifestyle	PhysActivity + Fruits + Veggies	Score simple de mode de vie sain
-BMI_Risk	Catégorisation du BMI	Normal / surpoids / obésité
-Metabolic_Risk	BMI_Risk + HighBP + HighChol	Risque métabolique
-Cardio_Risk	HighBP + HighChol + HeartDiseaseorAttack + Stroke	Risque cardiovasculaire
-Socio_Economic_Level	Education + Income	Niveau socio-économique
-Health_Risk	GenHlth + 2*DiffWalk + PhysHlth/30 + MentHlth/30	État de santé global
-Age_BMI_Interaction	Age * BMI	Interaction âge / BMI
+Notre but ici est donc d'utiliser ce dataset pour comprendre si, à un instant donné, une personne ayant certains marqueurs associés au diabète a de grandes chances de le développer ou de l'avoir développé.
 
-Nous avons également étudié une combinaison multiplicative :
+La question métier est donc d'analyser les différentes corrélations pour mieux comprendre les facteurs associés à un mode de vie sain et réduire au maximum le risque de diabète.
 
-BMI_0_1 = (BMI - min(BMI)) / (max(BMI) - min(BMI))
+## 📖 3. Dictionnaire des Variables (Features)
 
-BMI_BP_Chol_mult = BMI_0_1 × (1 + HighBP) × (1 + HighChol)
+Le dataset contient **21 variables explicatives**. Voici leur signification avant regroupement de certaines lors du prétraitement.
 
-Cette variable permet de modéliser l’effet combiné du BMI, de l’hypertension et du cholestérol.
-Elle ne représente pas une simple addition : elle introduit une interaction entre ces facteurs.
+### Indicateurs Médicaux
 
-Modélisation
+- `HighBP` : Hypertension artérielle diagnostiquée par un professionnel de santé (`0 = Non`, `1 = Oui`).
+- `HighChol` : Taux de cholestérol sanguin élevé diagnostiqué par un professionnel (`0 = Non`, `1 = Oui`).
+- `CholCheck` : Dépistage du cholestérol effectué au cours des 5 dernières années (`0 = Non`, `1 = Oui`).
+- `BMI` : Indice de Masse Corporelle (IMC).
+- `Stroke` : Antécédent d'Accident Vasculaire Cérébral (AVC) (`0 = Non`, `1 = Oui`).
+- `HeartDiseaseorAttack` : Maladie coronarienne ou infarctus du myocarde signalés (`0 = Non`, `1 = Oui`).
+- `GenHlth` : Évaluation subjective de la santé générale, sur une échelle de `1 = excellente` à `5 = mauvaise`.
+- `MentHlth` : Nombre de jours de mauvaise santé mentale sur les 30 derniers jours (`0 à 30`).
+- `PhysHlth` : Nombre de jours de mauvaise santé physique sur les 30 derniers jours (`0 à 30`).
+- `DiffWalk` : Difficulté sérieuse à marcher ou à monter des escaliers (`0 = Non`, `1 = Oui`).
 
-Le problème est traité comme une classification binaire.
+### Mode de Vie et Comportement
 
-Le modèle principal utilisé est une régression logistique, choisie pour son interprétabilité et sa pertinence sur une variable cible binaire.
+- `Smoker` : A fumé au moins 100 cigarettes dans sa vie (`0 = Non`, `1 = Oui`).
+- `PhysActivity` : A pratiqué une activité physique, hors travail, dans les 30 derniers jours (`0 = Non`, `1 = Oui`).
+- `Fruits` : Consomme des fruits au moins 1 fois par jour (`0 = Non`, `1 = Oui`).
+- `Veggies` : Consomme des légumes au moins 1 fois par jour (`0 = Non`, `1 = Oui`).
+- `HvyAlcoholConsump` : Grosse consommation d'alcool, supérieure à 14 verres par semaine pour un homme ou 7 pour une femme (`0 = Non`, `1 = Oui`).
 
-Les métriques utilisées sont :
+### Facteurs Socio-Démographiques et Accès aux Soins
 
-Accuracy
-Precision
-Recall
-F1-score
-ROC AUC
-
-Le recall est particulièrement important dans ce projet, car il mesure la capacité du modèle à détecter les vrais patients diabétiques et donc à limiter les faux négatifs.
-
-Résultat attendu
-
-Le modèle permet d’identifier des profils à risque à partir de variables simples.
-Il peut servir de premier filtre préventif, mais ne remplace pas un diagnostic médical.
-
-Pistes d’amélioration
-
-Plusieurs améliorations sont possibles :
-
-Ajouter des données médicales plus précises : glycémie, HbA1c, antécédents familiaux.
-Remplacer certaines variables binaires par des variables continues.
-Tester des modèles non linéaires comme Random Forest ou XGBoost.
-Ajouter des méthodes d’explicabilité comme SHAP.
-Transformer le modèle en outil de prévention personnalisée.
-Conclusion
-
-Ce projet montre comment des données déclaratives peuvent être utilisées pour analyser les facteurs associés au diabète et construire un modèle de pré-diagnostic.
-
-L’objectif principal est de mieux comprendre les profils à risque et d’orienter une démarche de prévention, tout en gardant à l’esprit les limites du dataset.
+- `AnyHealthcare` : Possède une couverture maladie ou une assurance (`0 = Non`, `1 = Oui`).
+- `NoDocbcCost` : A dû renoncer à voir un médecin pour des raisons financières dans les 12 derniers mois (`0 = Non`, `1 = Oui`).
+- `Sex` : Sexe du répondant (`0 = Femme`, `1 = Homme`).
+- `Age` : Tranche d'âge, sur 14 niveaux.
+- `Education` : Niveau d'études atteint, de `1 à 6`.
+- `Income` : Niveau de revenu annuel du ménage, de `1 à 8`.

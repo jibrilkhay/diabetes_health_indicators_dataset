@@ -1,150 +1,121 @@
-# Diabetes Health Indicators Analysis
+diabetes_health_indicators_dataset
+Présentation
 
-## Présentation
+Ce projet utilise le dataset Diabetes Health Indicators, issu de l’enquête américaine BRFSS 2015 menée par le CDC.
+L’objectif est d’analyser des indicateurs de santé, de mode de vie et de profil socio-économique afin de prédire la présence d’un diabète à partir de données déclaratives.
 
-Ce projet analyse les facteurs de santé associés au diabète à partir du jeu de données **Diabetes Health Indicators BRFSS 2015**.
+Nous avons utilisé la version binaire du dataset :
 
-L’objectif est d’étudier comment des variables comme l’hypertension, le cholestérol, le BMI, l’âge, l’activité physique ou l’état de santé général sont liées à la présence du diabète.
+diabetes_binary_health_indicators.csv
 
-## Problématique
+La variable cible est :
 
-Quels indicateurs de santé sont les plus fortement associés à la présence du diabète, et comment certaines combinaisons de variables permettent-elles de mieux expliquer le risque ?
+Diabetes_binary = 0 : pas de diabète
+Diabetes_binary = 1 : diabète
+Objectif du projet
 
-## Jeu de données
+Le but n’est pas de remplacer un diagnostic médical, mais de construire un outil de pré-diagnostic capable d’identifier des profils potentiellement à risque à partir d’un questionnaire simple.
 
-Source : Kaggle, **Diabetes Health Indicators Dataset**
+Le projet cherche donc à répondre à la question suivante :
 
-Fichiers CSV possibles :
+Quels indicateurs de santé et habitudes de vie sont associés à un risque plus élevé de diabète ?
 
-- `diabetes_012_health_indicators_BRFSS2015.csv`
-- `diabetes_binary_5050split_health_indicators_BRFSS2015.csv`
-- `diabetes_binary_health_indicators_BRFSS2015.csv`
+Dataset
 
-Les fichiers de données ne sont pas versionnés dans ce dépôt. Ils doivent être téléchargés depuis Kaggle puis placés dans le dossier [data](C:/Users/khjib/Documents/data/data).
+Le dataset contient 253 680 lignes et 21 variables explicatives.
 
-## Variables principales
+Les variables peuvent être regroupées en trois catégories :
 
-- `Diabetes_binary`
-- `HighBP`
-- `HighChol`
-- `BMI`
-- `Smoker`
-- `PhysActivity`
-- `Fruits`
-- `Veggies`
-- `GenHlth`
-- `Age`
-- `Income`
-- `Education`
+Indicateurs médicaux
+HighBP : hypertension artérielle
+HighChol : cholestérol élevé
+CholCheck : contrôle du cholestérol
+BMI : indice de masse corporelle
+Stroke : antécédent d’AVC
+HeartDiseaseorAttack : maladie cardiaque ou infarctus
+GenHlth : santé générale déclarée
+MentHlth : jours de mauvaise santé mentale
+PhysHlth : jours de mauvaise santé physique
+DiffWalk : difficulté à marcher
+Mode de vie
+Smoker : tabagisme
+PhysActivity : activité physique
+Fruits : consommation de fruits
+Veggies : consommation de légumes
+HvyAlcoholConsump : forte consommation d’alcool
+Facteurs socio-démographiques
+AnyHealthcare : accès à une couverture santé
+NoDocbcCost : renoncement aux soins pour raisons financières
+Sex : sexe
+Age : tranche d’âge
+Education : niveau d’étude
+Income : niveau de revenu
+Limites du dataset
 
-## Méthodologie
+Ce dataset présente plusieurs limites importantes :
 
-Le projet suit les grandes étapes suivantes :
+Les données sont déclaratives, donc potentiellement imprécises.
+Le dataset représente une situation à un instant donné : il ne permet pas de prouver une causalité.
+Les types de diabète ne sont pas distingués.
+Certains patients classés comme non diabétiques peuvent être non diagnostiqués.
+Certaines variables sont binaires alors qu’une mesure continue serait plus informative.
 
-1. chargement des données
-2. exploration des variables
-3. création d’une table EDA
-4. visualisations
-5. analyse des corrélations
-6. étude de combinaisons de variables
-7. régression logistique
-8. comparaison entre jeu équilibré et jeu déséquilibré
-9. interprétation des résultats
+Ainsi, le projet doit être interprété comme une analyse de profils associés au diabète, et non comme une preuve médicale causale.
 
-Des compléments sont disponibles dans :
+Feature engineering
 
-- [docs/dataset_description.md](C:/Users/khjib/Documents/data/docs/dataset_description.md)
-- [docs/methodology.md](C:/Users/khjib/Documents/data/docs/methodology.md)
+Afin d’améliorer l’interprétation et la modélisation, nous avons créé plusieurs variables synthétiques :
 
-## Résultats principaux
+Feature	Formule	Interprétation
+Healthy_Lifestyle	PhysActivity + Fruits + Veggies	Score simple de mode de vie sain
+BMI_Risk	Catégorisation du BMI	Normal / surpoids / obésité
+Metabolic_Risk	BMI_Risk + HighBP + HighChol	Risque métabolique
+Cardio_Risk	HighBP + HighChol + HeartDiseaseorAttack + Stroke	Risque cardiovasculaire
+Socio_Economic_Level	Education + Income	Niveau socio-économique
+Health_Risk	GenHlth + 2*DiffWalk + PhysHlth/30 + MentHlth/30	État de santé global
+Age_BMI_Interaction	Age * BMI	Interaction âge / BMI
 
-Les facteurs les plus associés au diabète dans cette étude sont notamment :
+Nous avons également étudié une combinaison multiplicative :
 
-- l’hypertension
-- le cholestérol élevé
-- un BMI élevé
-- l’âge
-- l’état de santé général
-- les difficultés physiques et de mobilité
+BMI_0_1 = (BMI - min(BMI)) / (max(BMI) - min(BMI))
 
-## Structure du dépôt
+BMI_BP_Chol_mult = BMI_0_1 × (1 + HighBP) × (1 + HighChol)
 
-```text
-diabetes-health-indicators-analysis/
-|-- README.md
-|-- requirements.txt
-|-- .gitignore
-|-- data/
-|   `-- README.md
-|-- src/
-|   `-- README.md
-|-- outputs/
-|   |-- figures/
-|   `-- reports/
-|-- docs/
-`-- notebooks/
-    `-- README.md
-```
+Cette variable permet de modéliser l’effet combiné du BMI, de l’hypertension et du cholestérol.
+Elle ne représente pas une simple addition : elle introduit une interaction entre ces facteurs.
 
-## Visualisations
+Modélisation
 
-Les figures générées sont disponibles dans [outputs/figures](C:/Users/khjib/Documents/data/outputs/figures).
+Le problème est traité comme une classification binaire.
 
-## Rapports
+Le modèle principal utilisé est une régression logistique, choisie pour son interprétabilité et sa pertinence sur une variable cible binaire.
 
-Les rapports du projet sont disponibles dans [outputs/reports](C:/Users/khjib/Documents/data/outputs/reports).
+Les métriques utilisées sont :
 
-## Installation
+Accuracy
+Precision
+Recall
+F1-score
+ROC AUC
 
-```bash
-python -m venv venv
-source venv/bin/activate
-```
+Le recall est particulièrement important dans ce projet, car il mesure la capacité du modèle à détecter les vrais patients diabétiques et donc à limiter les faux négatifs.
 
-Sous Windows :
+Résultat attendu
 
-```powershell
-venv\Scripts\activate
-```
+Le modèle permet d’identifier des profils à risque à partir de variables simples.
+Il peut servir de premier filtre préventif, mais ne remplace pas un diagnostic médical.
 
-Puis :
+Pistes d’amélioration
 
-```bash
-pip install -r requirements.txt
-```
+Plusieurs améliorations sont possibles :
 
-## Lancement
+Ajouter des données médicales plus précises : glycémie, HbA1c, antécédents familiaux.
+Remplacer certaines variables binaires par des variables continues.
+Tester des modèles non linéaires comme Random Forest ou XGBoost.
+Ajouter des méthodes d’explicabilité comme SHAP.
+Transformer le modèle en outil de prévention personnalisée.
+Conclusion
 
-Exemple :
+Ce projet montre comment des données déclaratives peuvent être utilisées pour analyser les facteurs associés au diabète et construire un modèle de pré-diagnostic.
 
-```bash
-python src/logistic_regression_balanced_vs_imbalanced.py
-```
-
-Remarque : certains scripts conservent des chemins absolus issus de l’environnement d’origine. Ils ont été laissés tels quels afin de ne pas modifier la logique initiale du projet.
-
-## Limites
-
-- les données sont déclaratives
-- elles ne permettent pas d’établir une causalité directe
-- le dataset concerne la population américaine
-- les types de diabète peuvent être mélangés dans la cible
-- les résultats ne constituent pas un outil médical de diagnostic
-
-## Technologies utilisées
-
-- Python
-- Pandas
-- DuckDB
-- Matplotlib
-- Seaborn
-- Scikit-learn
-- Régression logistique
-
-## Auteurs
-
-- Jibril Khay
-- Yassine El Hadiri
-- Florent Accaries
-
-Les noms ont été conservés à partir des documents déjà présents dans le projet.
+L’objectif principal est de mieux comprendre les profils à risque et d’orienter une démarche de prévention, tout en gardant à l’esprit les limites du dataset.

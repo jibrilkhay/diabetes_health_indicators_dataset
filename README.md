@@ -1,47 +1,150 @@
-diabetes_health_indicators_dataset
-📊 Documentation du Jeu de Données : Indicateurs de Santé du Diabète (BRFSS 2015)
-Ce document récapitule les informations essentielles concernant le jeu de données "Diabetes Health Indicators" issu du Kaggle, son dictionnaire de variables, ainsi qu'un avis critique sur l'utilisation de ces données pour la prédiction du diabète de type 2.
-📋 1. Contexte et Origine
-Ce jeu de données provient du BRFSS (Behavioral Risk Factor Surveillance System) de l'année 2015, une enquête téléphonique annuelle menée par le CDC (Centers for Disease Control and Prevention) aux États-Unis.
+# Diabetes Health Indicators Analysis
 
-Le diabète est une maladie chronique majeure : 34,2 millions d'Américains sont diabétiques et 88 millions sont prédiabétiques (dont une grande majorité l'ignore). L'objectif initial de ce dataset est d'explorer les facteurs de risque et de tenter de construire des modèles prédictifs. NOus avons personnellement choisi le jeu de données avec les 2 classes binaires.
+## Présentation
 
-Les 3 fichiers disponibles :
-diabetes_012_health_indicators (253 680 lignes) : 3 classes (0 = sain, 1 = prédiabète, 2 = diabète). Déséquilibré.
-diabetes_binary_5050split_health_indicators (70 692 lignes) : Binaire (0 = sain, 1 = prédiabétique/diabétique). Parfaitement équilibré (50/50).
-diabetes_binary_health_indicators (253 680 lignes) : Binaire. Déséquilibré.
-⚠️ 2. Limites Critiques du Dataset
-Une analyse approfondie du dataset révèle des biais méthodologiques fondamentaux. Ce jeu de données n'est pas adapté pour prédire qui va développer un diabète à l'avenir.
+Ce projet analyse les facteurs de santé associés au diabète à partir du jeu de données **Diabetes Health Indicators BRFSS 2015**.
 
-Causalité Inverse : Les données sont une "photographie" de l'état actuel. Un patient diagnostiqué diabétique a souvent déjà changé son mode de vie (perte de poids, meilleure alimentation, sport) pour se soigner. Le modèle risque d'apprendre que "manger sainement = avoir le diabète", ce qui fausse totalement les prédictions.
-Mélange des types de diabète : Les diabètes de type 1 (auto-immun) et de type 2 (lié au mode de vie) sont regroupés dans la même variable cible, ce qui dilue les corrélations.
-Les "Faux Sains" : De nombreuses personnes classées comme "saines" (0) peuvent être en phase de prédiabète non diagnostiqué, ce qui ajoute du bruit au modèle.
-💡 Véritable objectif : Notre but ici est donc d'utiliser ce dataset pour comprendre si à un instant t donné , une personne ayant certains marqueurs associés au diabète a donc dde grandes chances de le développer ou de l'avoir développé ? (Prédiction à un instant donné) . Notre question métier en lien avec est donc d'analyser les différentes corrélations pour avoir un mode de vie sain, et donc réduire au maximum le risque de diabète ici !
+L’objectif est d’étudier comment des variables comme l’hypertension, le cholestérol, le BMI, l’âge, l’activité physique ou l’état de santé général sont liées à la présence du diabète.
 
-📖 3. Dictionnaire des Variables (Features)
-Le dataset contient 21 variables explicatives. Voici leur signification avant regroupement de certaines lors du pre-processing !
+## Problématique
 
-Indicateurs Médicaux
-HighBP : Hypertension artérielle diagnostiquée par un professionnel de santé (0=Non, 1=Oui).
-HighChol : Taux de cholestérol sanguin élevé diagnostiqué par un professionnel (0=Non, 1=Oui).
-CholCheck : Dépistage du cholestérol effectué au cours des 5 dernières années (0=Non, 1=Oui).
-BMI : Indice de Masse Corporelle (IMC).
-Stroke : Antécédent d'Accident Vasculaire Cérébral (AVC) (0=Non, 1=Oui).
-HeartDiseaseorAttack : Maladie coronarienne ou infarctus du myocarde signalés (0=Non, 1=Oui).
-GenHlth : Évaluation subjective de la santé générale (échelle de 1 = excellente à 5 = mauvaise).
-MentHlth : Nombre de jours de mauvaise santé mentale sur les 30 derniers jours (0 à 30).
-PhysHlth : Nombre de jours de mauvaise santé physique sur les 30 derniers jours (0 à 30).
-DiffWalk : Difficulté sérieuse à marcher ou à monter des escaliers (0=Non, 1=Oui).
-Mode de Vie et Comportement
-Smoker : A fumé au moins 100 cigarettes dans sa vie (0=Non, 1=Oui).
-PhysActivity : A pratiqué une activité physique (hors travail) dans les 30 derniers jours (0=Non, 1=Oui).
-Fruits : Consomme des fruits au moins 1 fois par jour (0=Non, 1=Oui).
-Veggies : Consomme des légumes au moins 1 fois par jour (0=Non, 1=Oui).
-HvyAlcoholConsump : Grosse consommation d'alcool (>14 verres/semaine pour un homme, >7 pour une femme) (0=Non, 1=Oui).
-Facteurs Socio-Démographiques et Accès aux Soins
-AnyHealthcare : Possède une couverture maladie / assurance (0=Non, 1=Oui).
-NoDocbcCost : A dû renoncer à voir un médecin pour des raisons financières dans les 12 derniers mois (0=Non, 1=Oui).
-Sex : Sexe du répondant (0=Femme, 1=Homme).
-Age : Tranche d'âge (14 niveaux, de 1 à 14).
-Education : Niveau d'études atteint (de 1 à 6).
-Income : Niveau de revenu annuel du ménage (de 1 à 8).
+Quels indicateurs de santé sont les plus fortement associés à la présence du diabète, et comment certaines combinaisons de variables permettent-elles de mieux expliquer le risque ?
+
+## Jeu de données
+
+Source : Kaggle, **Diabetes Health Indicators Dataset**
+
+Fichiers CSV possibles :
+
+- `diabetes_012_health_indicators_BRFSS2015.csv`
+- `diabetes_binary_5050split_health_indicators_BRFSS2015.csv`
+- `diabetes_binary_health_indicators_BRFSS2015.csv`
+
+Les fichiers de données ne sont pas versionnés dans ce dépôt. Ils doivent être téléchargés depuis Kaggle puis placés dans le dossier [data](C:/Users/khjib/Documents/data/data).
+
+## Variables principales
+
+- `Diabetes_binary`
+- `HighBP`
+- `HighChol`
+- `BMI`
+- `Smoker`
+- `PhysActivity`
+- `Fruits`
+- `Veggies`
+- `GenHlth`
+- `Age`
+- `Income`
+- `Education`
+
+## Méthodologie
+
+Le projet suit les grandes étapes suivantes :
+
+1. chargement des données
+2. exploration des variables
+3. création d’une table EDA
+4. visualisations
+5. analyse des corrélations
+6. étude de combinaisons de variables
+7. régression logistique
+8. comparaison entre jeu équilibré et jeu déséquilibré
+9. interprétation des résultats
+
+Des compléments sont disponibles dans :
+
+- [docs/dataset_description.md](C:/Users/khjib/Documents/data/docs/dataset_description.md)
+- [docs/methodology.md](C:/Users/khjib/Documents/data/docs/methodology.md)
+
+## Résultats principaux
+
+Les facteurs les plus associés au diabète dans cette étude sont notamment :
+
+- l’hypertension
+- le cholestérol élevé
+- un BMI élevé
+- l’âge
+- l’état de santé général
+- les difficultés physiques et de mobilité
+
+## Structure du dépôt
+
+```text
+diabetes-health-indicators-analysis/
+|-- README.md
+|-- requirements.txt
+|-- .gitignore
+|-- data/
+|   `-- README.md
+|-- src/
+|   `-- README.md
+|-- outputs/
+|   |-- figures/
+|   `-- reports/
+|-- docs/
+`-- notebooks/
+    `-- README.md
+```
+
+## Visualisations
+
+Les figures générées sont disponibles dans [outputs/figures](C:/Users/khjib/Documents/data/outputs/figures).
+
+## Rapports
+
+Les rapports du projet sont disponibles dans [outputs/reports](C:/Users/khjib/Documents/data/outputs/reports).
+
+## Installation
+
+```bash
+python -m venv venv
+source venv/bin/activate
+```
+
+Sous Windows :
+
+```powershell
+venv\Scripts\activate
+```
+
+Puis :
+
+```bash
+pip install -r requirements.txt
+```
+
+## Lancement
+
+Exemple :
+
+```bash
+python src/logistic_regression_balanced_vs_imbalanced.py
+```
+
+Remarque : certains scripts conservent des chemins absolus issus de l’environnement d’origine. Ils ont été laissés tels quels afin de ne pas modifier la logique initiale du projet.
+
+## Limites
+
+- les données sont déclaratives
+- elles ne permettent pas d’établir une causalité directe
+- le dataset concerne la population américaine
+- les types de diabète peuvent être mélangés dans la cible
+- les résultats ne constituent pas un outil médical de diagnostic
+
+## Technologies utilisées
+
+- Python
+- Pandas
+- DuckDB
+- Matplotlib
+- Seaborn
+- Scikit-learn
+- Régression logistique
+
+## Auteurs
+
+- Jibril Khay
+- Yassine El Hadiri
+- Florent Accaries
+
+Les noms ont été conservés à partir des documents déjà présents dans le projet.

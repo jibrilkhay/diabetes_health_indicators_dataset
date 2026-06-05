@@ -1,10 +1,10 @@
-# Data Directory
+# Dossier des données
 
-This folder is intended to store the CSV dataset files used by the project.
+Ce dossier est destiné à contenir les fichiers CSV utilisés par le projet.
 
-The data files are not committed directly to the repository. Download them from the Kaggle dataset **Diabetes Health Indicators BRFSS 2015** and place them in this folder before running the scripts.
+Les données ne sont pas stockées directement dans le dépôt. Il faut les télécharger depuis le dataset Kaggle **Diabetes Health Indicators BRFSS 2015** puis les placer ici avant d’exécuter les scripts.
 
-Expected files may include:
+Fichiers attendus possibles :
 
 - `diabetes_012_health_indicators_BRFSS2015.csv`
 - `diabetes_binary_5050split_health_indicators_BRFSS2015.csv`

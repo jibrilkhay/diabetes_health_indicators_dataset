@@ -1,24 +1,24 @@
-# Source Scripts Overview
+# Dossier source
 
-This folder contains the original analysis scripts, reorganized without changing their analytical logic.
+Ce dossier regroupe les scripts d’analyse du projet, sans modification de leur logique de fond.
 
-## File Roles
+## Rôle des fichiers
 
-- `data_preparation_brouillon.py`: the most complete draft pipeline. It loads the CSV, builds the EDA table, creates combined features, prepares the logistic-regression tables, balances the data, and evaluates a logistic regression model.
-- `eda_with_plot_test.py`: a lighter EDA script that ends with one focused plot on general health and diabetes rate.
-- `plot_generation.py`: the main plotting script for EDA charts and correlation visualizations.
-- `feature_combination_experiments.py`: a focused experiment script used to justify combined variables such as `Metabolic_Risk`.
-- `logistic_regression_balanced_vs_imbalanced.py`: a compact script dedicated to comparing model behavior on balanced versus full imbalanced data.
-- `features_reference.py`: a reference list of engineered and retained final features.
-- `diabetes_eda_table.sql`: SQL definition for the `diabetes_eda` transformation table.
+- `data_preparation.py` : script le plus complet. Il charge les données, construit la table EDA, crée des variables combinées, prépare les tables pour la régression logistique, équilibre les données puis évalue le modèle.
+- `eda_with_plot_test.py` : script d’exploration plus léger qui se termine par une visualisation ciblée.
+- `plot_generation.py` : script principal de génération des graphiques EDA et des visualisations de corrélation.
+- `feature_combination_experiments.py` : script d’expérimentation servant à justifier certaines variables combinées, notamment `Metabolic_Risk`.
+- `logistic_regression_balanced_vs_imbalanced.py` : script centré sur la comparaison entre un jeu équilibré et un jeu déséquilibré.
+- `features_reference.py` : liste de référence des variables finales et des variables combinées.
+- `diabetes_eda_table.sql` : définition SQL de la table `diabetes_eda`.
 
-## Overlap Notes
+## Remarque
 
-Some overlap between scripts is intentional because they represent different project stages:
+Certains scripts se recouvrent partiellement car ils correspondent à différentes étapes du projet :
 
 - exploration
-- visualization
-- feature-combination validation
-- final model comparison
+- visualisation
+- validation des combinaisons de variables
+- comparaison finale des modèles
 
-Only obvious duplication was cleaned up. The analytical workflow itself was left unchanged.
+Seules les répétitions les plus évidentes ont été nettoyées. Le déroulé analytique a été conservé.
